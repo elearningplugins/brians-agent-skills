@@ -9,8 +9,7 @@ linkedin-vertical-captioned-clip/
 ├── SKILL.md                 # Full workflow for agents and humans
 ├── README.md                # This file
 └── assets/
-    ├── CaptionedVideo.tsx   # Crop + one-word captions + 0.5s fade
-    └── Composition.tsx      # 1080×1920 composition (id: LinkedInVertical)
+    └── Composition.tsx      # Registration + crop + captions + fade (id: LinkedInVertical)
 ```
 
 ## Install
@@ -25,7 +24,7 @@ Or copy this directory to `~/.cursor/skills/linkedin-vertical-captioned-clip` / 
 
 1. Read `SKILL.md` (prerequisites: ffmpeg, Node, ~640MB Parakeet model, auto-editor release binary).
 2. Set `SKILL_DIR` to this folder; create a work directory; bootstrap Remotion with the commands in `SKILL.md`.
-3. Copy `assets/*.tsx` into the Remotion `src/` tree.
+3. Copy `assets/Composition.tsx` over Remotion `src/Composition.tsx`.
 4. Trim → Parakeet word SRT → `captions.json` → render `LinkedInVertical`.
 
 ## License

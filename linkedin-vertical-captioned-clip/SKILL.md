@@ -37,7 +37,7 @@ Templates live in `assets/` next to this `SKILL.md`. Resolve that directory port
 SKILL_DIR="${SKILL_DIR:-$HOME/.cursor/skills/linkedin-vertical-captioned-clip}"
 # or: $HOME/.claude/skills/linkedin-vertical-captioned-clip
 # or: /path/to/clone/brians-agent-skills/linkedin-vertical-captioned-clip
-test -f "$SKILL_DIR/assets/CaptionedVideo.tsx" || { echo "Set SKILL_DIR to this skill folder"; exit 1; }
+test -f "$SKILL_DIR/assets/Composition.tsx" || { echo "Set SKILL_DIR to this skill folder"; exit 1; }
 ```
 
 ## Hard rules
@@ -46,7 +46,7 @@ test -f "$SKILL_DIR/assets/CaptionedVideo.tsx" || { echo "Set SKILL_DIR to this 
 2. **Always** get word timestamps from the cut audio via Parakeet (`auto-editor whisper … --split-words`). Bench ~15s before the full cut.
 3. Burn captions in **Remotion**, not ffmpeg — many ffmpeg builds lack `ass` / `subtitles` / `drawtext`.
 4. Lock the trim (start + duration) before the final vertical — preview horizontally first; iterate ±seconds.
-5. Copy `assets/*.tsx` rather than reinventing caption Sequence math.
+5. Copy `assets/Composition.tsx` rather than reinventing caption Sequence math.
 6. If Remotion is already rendering when you change `captions.json` or TSX, **stop it and re-render**.
 
 ## Prerequisites
@@ -75,8 +75,7 @@ $WORK/                            # any folder you choose for this job
     public/source.mp4             # same as locked cut.mp4
     public/captions.json
     public/words.srt
-    src/CaptionedVideo.tsx
-    src/Composition.tsx
+    src/Composition.tsx           # from assets/ (crop + captions + registration)
 ```
 
 ## End-to-end workflow
@@ -89,9 +88,8 @@ mkdir -p "$WORK" && cd "$WORK"
 npx create-video@latest --yes --blank remotion
 cd remotion
 npx remotion add @remotion/captions
-cp "$SKILL_DIR/assets/CaptionedVideo.tsx" src/CaptionedVideo.tsx
 cp "$SKILL_DIR/assets/Composition.tsx" src/Composition.tsx
-# Ensure src/Root.tsx renders <MyComposition /> from ./Composition
+# Ensure src/Root.tsx renders <MyComposition /> from ./Composition (create-video blank does).
 ```
 
 Composition id in the template: **`LinkedInVertical`**. Use that id in `remotion render`, or change both the template and the render command.
@@ -105,7 +103,7 @@ ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$SOURCE"
 ffprobe -v quiet -select_streams v:0 -show_entries stream=width,height,r_frame_rate -of csv=p=0 "$SOURCE"
 ```
 
-The crop template defaults to **1280×720** sources. For other sizes, edit `SOURCE_WIDTH` / `SOURCE_HEIGHT` / `CROP_X` in `CaptionedVideo.tsx`.
+The crop template defaults to **1280×720** sources. For other sizes, edit `SOURCE_WIDTH` / `SOURCE_HEIGHT` / `CROP_X` at the top of `Composition.tsx`.
 
 Find the beat (topic phrase, shout-out, Q&A): chunk-transcribe **for discovery only**, or scrub with `ffmpeg -ss` previews. Convert clock times with `seconds = mm*60+ss`.
 
@@ -125,7 +123,7 @@ ffmpeg -y -i "$WORK/cut.mp4" -ar 16000 -ac 1 "$WORK/final.wav"
 cp "$WORK/cut.mp4" "$WORK/remotion/public/source.mp4"
 ```
 
-Set `DURATION_SEC` in `Composition.tsx` from ffprobe of `public/source.mp4` (`frames = round(sec * 30)` at 30fps).
+Set `DURATION_SEC` near the top of `Composition.tsx` from ffprobe of `public/source.mp4` (`frames = round(sec * 30)` at 30fps).
 
 **Black flash at t=0?** Often the player (audio ~1 frame early), not a missing frame. Check:
 
@@ -219,7 +217,7 @@ PY
 
 ### 6. Look + fade
 
-Already in `assets/CaptionedVideo.tsx`:
+Already in `assets/Composition.tsx`:
 
 - One word: `combineTokensWithinMilliseconds: 0`
 - Style: uppercase, heavy sans, `#39E508` highlight, black outline
@@ -254,7 +252,7 @@ Confirm: sync, faces/lower-thirds clear, fade, trim matches the locked story.
 | Black flash at t=0 | Check frame0; often player A/V skew |
 | Stale captions | Stop Remotion; render again after writing JSON |
 | Composition not found | Pass the id from `Composition.tsx` |
-| Non-720p source | Edit `SOURCE_WIDTH` / `SOURCE_HEIGHT` / `CROP_X` |
+| Non-720p source | Edit `SOURCE_WIDTH` / `SOURCE_HEIGHT` / `CROP_X` in `Composition.tsx` |
 | ffmpeg cannot burn subs | Expected — use Remotion |
 | Wrong length | Sync `DURATION_SEC` to ffprobe of `public/source.mp4` |
 
