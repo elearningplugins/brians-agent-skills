@@ -281,6 +281,16 @@ coverage where appropriate, and use mutation testing to find assertions
 that are missing.
 ```
 
+
+## Make a LinkedIn vertical clip
+
+```text
+/linkedin-vertical-captioned-clip
+
+Turn this horizontal multi-cam recording into a 9:16 LinkedIn clip with
+one-word captions synced to the audio. Follow the skill in this repo.
+```
+
 ---
 
 # Why publish these?
