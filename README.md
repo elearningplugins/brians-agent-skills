@@ -134,6 +134,7 @@ These skills are experiments in doing exactly that.
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`pr-quality`](./pr-quality)           | Prepare and review pull requests using exact diff accounting, testing evidence, blast radius analysis, implementation review, and questions designed to challenge whether the proposed solution is actually the right one. |
 | [`qa-unit-testing`](./qa-unit-testing) | Build stronger TypeScript unit tests by combining example based tests, fast-check property testing, and Stryker mutation analysis to find gaps ordinary coverage metrics miss.                                             |
+| [`linkedin-vertical-captioned-clip`](./linkedin-vertical-captioned-clip) | Cut a live/stream recording into a LinkedIn 9:16 Remotion clip with TikTok-style one-word captions from Parakeet word timestamps (auto-editor), face-safe placement, filler stripping, and a short end fade. |
 
 More skills will be added as Brian continues converting useful engineering practices into repeatable agent workflows.
 
@@ -175,6 +176,20 @@ A test suite that executes every line but survives meaningful mutations still ha
 The goal is not maximum test count or maximum coverage.
 
 The goal is tests that catch real defects.
+
+---
+
+## `linkedin-vertical-captioned-clip`
+
+Turn a horizontal multi-cam live recording into a shareable LinkedIn vertical:
+
+* Trim to the beat the user locks (absolute timestamps)
+* Crop to the speaking stack (left cams → 1080×1920)
+* Transcribe with **auto-editor + Parakeet `--split-words`** for real word times
+* Render one-word TikTok-style captions in Remotion (not ffmpeg burn-in)
+* Drop `uh`/`um` without retiming; fade out the last 0.5s
+
+Do not evenly space transcript words — that is what made captions look unsynced.
 
 ---
 
