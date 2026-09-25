@@ -238,6 +238,7 @@ or:
 ```bash
 gh skill install elearningplugins/brians-agent-skills pr-quality
 gh skill install elearningplugins/brians-agent-skills qa-unit-testing
+gh skill install elearningplugins/brians-agent-skills linkedin-vertical-captioned-clip
 ```
 
 ## Manual installation
