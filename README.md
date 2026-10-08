@@ -135,6 +135,7 @@ These skills are experiments in doing exactly that.
 | [`pr-quality`](./pr-quality)           | Prepare and review pull requests using exact diff accounting, testing evidence, blast radius analysis, implementation review, and questions designed to challenge whether the proposed solution is actually the right one. |
 | [`qa-unit-testing`](./qa-unit-testing) | Build stronger TypeScript unit tests by combining example based tests, fast-check property testing, and Stryker mutation analysis to find gaps ordinary coverage metrics miss.                                             |
 | [`linkedin-vertical-captioned-clip`](./linkedin-vertical-captioned-clip) | Cut a live/stream recording into a LinkedIn 9:16 Remotion clip with TikTok-style one-word captions from Parakeet word timestamps (auto-editor), face-safe placement, filler stripping, and a short end fade. |
+| [`water-meter-leak-diagnosis`](./water-meter-leak-diagnosis) | Read a residential water meter from a phone video, reconcile it against the utility bill, and isolate a leak with shutoff tests before recommending fixes or a monitor such as Flume. |
 
 More skills will be added as Brian continues converting useful engineering practices into repeatable agent workflows.
 
@@ -193,6 +194,22 @@ Do not evenly space transcript words — that is what made captions look unsynce
 
 ---
 
+## `water-meter-leak-diagnosis`
+
+A high water bill is a debugging problem: the meter is the instrument, the bill is the log, and shutoff valves are how you bisect.
+
+The skill has the agent:
+
+* extract frames from a meter video in both orientations (pit videos are often upside down) and read every screen the register cycles through
+* identify make, model, size and units from the display and the manufacturer manual instead of assuming
+* keep a timestamped readings log and reconcile it against truncated bill reads
+* isolate flow by turning off irrigation, then the house main, before naming a cause
+* choose a leak monitor by where it sits relative to the irrigation tap, and re-verify prices and rebates
+
+It refuses to call a 90-second clip proof of "no leak": at 0.01-gallon resolution a slow drip takes minutes to move the last digit.
+
+---
+
 # Installation
 
 These skills follow the open [Agent Skills](https://agentskills.io) format and can be used by tools that support `SKILL.md`.
@@ -239,6 +256,7 @@ or:
 gh skill install elearningplugins/brians-agent-skills pr-quality
 gh skill install elearningplugins/brians-agent-skills qa-unit-testing
 gh skill install elearningplugins/brians-agent-skills linkedin-vertical-captioned-clip
+gh skill install elearningplugins/brians-agent-skills water-meter-leak-diagnosis
 ```
 
 ## Manual installation
@@ -289,6 +307,15 @@ that are missing.
 
 Turn this horizontal multi-cam recording into a 9:16 LinkedIn clip with
 one-word captions synced to the audio. Follow the skill in this repo.
+```
+
+## Diagnose a high water bill
+
+```text
+/water-meter-leak-diagnosis
+
+Here is a video of my water meter and my latest bill. Tell me what the
+numbers mean, whether the bill matches the meter, and where the water is going.
 ```
 
 ---
