@@ -7,6 +7,7 @@ This repo publishes reusable Agent Skills (`SKILL.md`), not an application.
 - `pr-quality/` — PR preparation and review skill
 - `qa-unit-testing/` — TypeScript unit / property / mutation testing skill
 - `linkedin-vertical-captioned-clip/` — LinkedIn 9:16 Remotion clip with Parakeet word captions
+- `youth-soccer-player-analysis/` — local per-player analysis of youth soccer game video
 
 Each skill directory is self-contained. Prefer editing inside one skill at a time.
 

@@ -134,6 +134,7 @@ These skills are experiments in doing exactly that.
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`pr-quality`](./pr-quality)           | Prepare and review pull requests using exact diff accounting, testing evidence, blast radius analysis, implementation review, and questions designed to challenge whether the proposed solution is actually the right one. |
 | [`qa-unit-testing`](./qa-unit-testing) | Build stronger TypeScript unit tests by combining example based tests, fast-check property testing, and Stryker mutation analysis to find gaps ordinary coverage metrics miss.                                             |
+| [`youth-soccer-player-analysis`](./youth-soccer-player-analysis) | Local, automatic per-player analysis of youth soccer video: camera check, tracking, team split by kit colour, jersey-number identification, field calibration, and a minutes/distance/heatmap report with honest coverage and "unconfirmed" stretches. |
 | [`linkedin-vertical-captioned-clip`](./linkedin-vertical-captioned-clip) | Cut a live/stream recording into a LinkedIn 9:16 Remotion clip with TikTok-style one-word captions from Parakeet word timestamps (auto-editor), face-safe placement, filler stripping, and a short end fade. |
 
 More skills will be added as Brian continues converting useful engineering practices into repeatable agent workflows.
@@ -193,6 +194,20 @@ Do not evenly space transcript words — that is what made captions look unsynce
 
 ---
 
+## `youth-soccer-player-analysis`
+
+Turn a youth soccer game recording into a report on one player, fully on the local machine:
+
+* Check the camera type first (fixed-centre pan/zoom cameras like Trace allow one calibration for the whole game)
+* Prove each stage on a 2-minute stretch before the full overnight run
+* Detect and track players with BoT-SORT, split teams by kit colour, find the player by jersey-number votes
+* Fit a field template from line evidence to get positions, distance and heatmaps
+* Mark uncertain stretches "unconfirmed" and keep them out of the stats
+
+Measured distance only covers what the camera shows; the report says how much of the game the video covers.
+
+---
+
 # Installation
 
 These skills follow the open [Agent Skills](https://agentskills.io) format and can be used by tools that support `SKILL.md`.
@@ -239,6 +254,7 @@ or:
 gh skill install elearningplugins/brians-agent-skills pr-quality
 gh skill install elearningplugins/brians-agent-skills qa-unit-testing
 gh skill install elearningplugins/brians-agent-skills linkedin-vertical-captioned-clip
+gh skill install elearningplugins/brians-agent-skills youth-soccer-player-analysis
 ```
 
 ## Manual installation
@@ -289,6 +305,15 @@ that are missing.
 
 Turn this horizontal multi-cam recording into a 9:16 LinkedIn clip with
 one-word captions synced to the audio. Follow the skill in this repo.
+```
+
+## Analyze one player in a youth soccer game
+
+```text
+/youth-soccer-player-analysis
+
+Build a report for #16 on the white team from this Trace recording:
+minutes played, distance, heatmap and a few clips. Keep the video on this Mac.
 ```
 
 ---
