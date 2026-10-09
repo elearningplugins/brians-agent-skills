@@ -28,6 +28,11 @@ Download the Roboflow models with `sports/examples/soccer/setup.sh` or the `gdow
 | Detection + BoT-SORT on 2 min at 5 fps | about 30 min |
 | SIFT registration, 240 frames at 960 px | about 1 min |
 | PnLCalib keypoint + line models | about 9 s/frame |
+| Roboflow-style pitch keypoint model (YOLOv8x-pose, `imgsz=640`) | about 1.2 s/frame |
 | Team split colour pass over 2 min of detections | about 2.5 min |
+| EasyOCR jersey reads, 1840 torso crops | about 15 min |
+| ffmpeg, one frame per 5 s from a 54-minute 1080p game | about 3 min |
+| `build_panorama.py`, 645 frames (registration about 3 min, then bundle adjustment and median) | about 5 min |
+| Differential-evolution field fit on the panorama (popsize 30, 250 generations) | about 11 min |
 
 Run long stages in the background and check progress from their output files instead of blocking.

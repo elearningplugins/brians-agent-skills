@@ -312,7 +312,7 @@ one-word captions synced to the audio. Follow the skill in this repo.
 ```text
 /youth-soccer-player-analysis
 
-Build a report for #16 on the white team from this Trace recording:
+Build a report for my kid (#10, red kit) from this Trace recording:
 minutes played, distance, heatmap and a few clips. Keep the video on this Mac.
 ```
 
