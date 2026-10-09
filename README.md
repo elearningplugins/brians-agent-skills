@@ -201,7 +201,7 @@ Turn a youth soccer game recording into a report on one player, fully on the loc
 * Check the camera type first (fixed-centre pan/zoom cameras like Trace allow one calibration for the whole game)
 * Prove each stage on a 2-minute stretch before the full overnight run
 * Detect and track players with BoT-SORT, split teams by kit colour, find the player by jersey-number votes
-* Fit a field template from line evidence to get positions, distance and heatmaps
+* Stitch a player-free panorama of the whole game, then fit the field template to it for positions, distance and heatmaps
 * Mark uncertain stretches "unconfirmed" and keep them out of the stats
 
 Measured distance only covers what the camera shows; the report says how much of the game the video covers.
