@@ -135,6 +135,7 @@ These skills are experiments in doing exactly that.
 | [`pr-quality`](./pr-quality)           | Prepare and review pull requests using exact diff accounting, testing evidence, blast radius analysis, implementation review, and questions designed to challenge whether the proposed solution is actually the right one. |
 | [`qa-unit-testing`](./qa-unit-testing) | Build stronger TypeScript unit tests by combining example based tests, fast-check property testing, and Stryker mutation analysis to find gaps ordinary coverage metrics miss.                                             |
 | [`linkedin-vertical-captioned-clip`](./linkedin-vertical-captioned-clip) | Cut a live/stream recording into a LinkedIn 9:16 Remotion clip with TikTok-style one-word captions from Parakeet word timestamps (auto-editor), face-safe placement, filler stripping, and a short end fade. |
+| [`scan-to-3d-print`](./scan-to-3d-print) | Turn a phone 3D scan into a faithful FDM print: watertight solid pulled back onto the scanned surface, invented parts labelled, every build checked for walls, crossings, islands and roughness against the scan, compared with photos from every side, and the Bambu Studio G-code itself checked for grams, coverage and supported islands. |
 
 More skills will be added as Brian continues converting useful engineering practices into repeatable agent workflows.
 
@@ -193,6 +194,20 @@ Do not evenly space transcript words — that is what made captions look unsynce
 
 ---
 
+## `scan-to-3d-print`
+
+Turn a Scaniverse (or similar) scan of a sculpture into a print that looks like the original, not just one that slices:
+
+* Keep detached real parts (a scanner gap once cut off a whole wing tip) and label anything invented, such as a mirrored wing or cut feather gaps
+* Thicken to a watertight solid, then pull each surface back onto the scan by its own measured depth, with budgets that stop the build when a safety stage cancels too much
+* Check walls with a cone of rays, crossings exactly, islands layer by layer, and roughness against the scan's own
+* Compare with the scan in both directions and with the photos from hand-picked cameras
+* Slice with the Bambu Studio CLI and verify the G-code: grams against the header, surface coverage, and support under every island
+
+Every check in the skill exists because a defect reached a preview without it.
+
+---
+
 # Installation
 
 These skills follow the open [Agent Skills](https://agentskills.io) format and can be used by tools that support `SKILL.md`.
@@ -239,6 +254,7 @@ or:
 gh skill install elearningplugins/brians-agent-skills pr-quality
 gh skill install elearningplugins/brians-agent-skills qa-unit-testing
 gh skill install elearningplugins/brians-agent-skills linkedin-vertical-captioned-clip
+gh skill install elearningplugins/brians-agent-skills scan-to-3d-print
 ```
 
 ## Manual installation
@@ -289,6 +305,15 @@ that are missing.
 
 Turn this horizontal multi-cam recording into a 9:16 LinkedIn clip with
 one-word captions synced to the audio. Follow the skill in this repo.
+```
+
+## Print something you scanned
+
+```text
+/scan-to-3d-print
+
+Turn this Scaniverse FBX of a garden statue into a 150 mm print for my
+Bambu P1S. Compare it with the photos in ./photos before slicing.
 ```
 
 ---
