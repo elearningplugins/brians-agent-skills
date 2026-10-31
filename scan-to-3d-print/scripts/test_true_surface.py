@@ -186,3 +186,38 @@ def test_hold_ramp_fades_the_pull_instead_of_leaving_a_step():
     bins = np.round(xs / 0.35).astype(int)
     per_bin = np.array([ms[bins == b].mean() for b in np.unique(bins)])
     assert np.abs(np.diff(per_bin)).max() < full * 0.35 / 3.0 + 0.05
+
+
+def test_rod_floor_lowers_the_minimum_on_rods_but_not_on_sheets():
+    # A claw or twig is a rod whose cross-section spans about its own thickness both ways; a wing or feather is a sheet spread far wider than it is thick
+    from printcheck import wall_thickness
+    from true_surface import rod_floor
+    rod = voxel_branch(radius=0.8)
+    mid = (np.abs(rod.vertices[:, 0]) < 4) & (rod.vertices[:, 1] > 0)
+    floor = rod_floor(rod.vertices, rod.vertex_normals, wall_thickness(rod)[0], MIN_PRINT, 0.45)
+    np.testing.assert_allclose(floor[mid], 0.45, atol=0.05)
+    sheet = slab(1.2)
+    floor = rod_floor(sheet.vertices, sheet.vertex_normals, wall_thickness(sheet)[0], MIN_PRINT, 0.45)
+    np.testing.assert_allclose(floor[interior(sheet)], MIN_PRINT)
+    # A sheet's rim is as narrow as a rod across but faces mostly the sheet's two sides, and a wing's rim must keep its minimum
+    v = sheet.vertices
+    rim = (np.abs(v[:, 0]) > 7.0 - 0.7) & (v[:, 1] > 4) & (v[:, 1] < 10)
+    np.testing.assert_allclose(floor[rim], MIN_PRINT, atol=0.01)
+
+
+def test_rod_with_a_lower_floor_comes_back_thinner_than_the_minimum():
+    # A claw scanned 0.6 mm across returns toward that size when its floor is lowered, without going under the floor or folding
+    from printcheck import wall_thickness
+    from true_surface import rod_floor
+    branch = voxel_branch(radius=0.8)
+    mid = (np.abs(branch.vertices[:, 0]) < 4) & (branch.vertices[:, 1] > 0)
+    cy, cz = branch.vertices[mid, 1].mean(), branch.vertices[mid, 2].mean()
+    a = np.linspace(0, 2 * np.pi, 400, endpoint=False)
+    A, X = np.meshgrid(a, np.arange(-7.0, 7.0, 0.1))
+    scan = np.c_[X.ravel(), cy + 0.3 * np.cos(A.ravel()), cz + 0.3 * np.sin(A.ravel())]
+    floor = rod_floor(branch.vertices, branch.vertex_normals, wall_thickness(branch)[0], MIN_PRINT, 0.45)
+    verts, report = run(branch, scan, min_print_mm=floor)
+    wall, _ = wall_thickness(trimesh.Trimesh(verts, branch.faces, process=False))
+    assert np.median(wall[mid]) < MIN_PRINT - 0.3
+    assert wall[mid].min() >= 0.45 - 0.05
+    assert report["blocked"]["folds"] < 0.02

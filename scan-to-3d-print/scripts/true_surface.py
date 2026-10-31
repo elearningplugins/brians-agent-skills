@@ -110,6 +110,44 @@ def pull_back(mesh, sample_xyz, *, pitch, min_wall_mm, min_print_mm, pull_margin
     return trial.vertices, report
 
 
+def rod_floor(vertices, normals, wall, min_print_mm, rod_print_mm, max_wall_mm=2.0, radius_scale=2.5, max_radius_mm=np.inf, rod_ratio=0.5, sheet_ratio=0.7, round_lo=0.25, round_hi=0.4, chunk=4000):
+    """Per-vertex printable minimum: rod_print_mm on rods such as claws and twigs, min_print_mm elsewhere, blended in between; a vertex no thicker than max_wall_mm is on a rod when the second spread of the surface within radius_scale times its wall is under rod_ratio times the mean wall there and its normals face round it (second eigenvalue of their second moment above round_hi), and on a sheet above sheet_ratio or below round_lo."""
+    floor = np.full(len(vertices), float(min_print_mm))
+    # Thicker parts never come near the floor; the ball scales with the wall because a fixed ball fits inside a thick wing and reads it as a rod
+    cand = np.where(np.isfinite(wall) & (wall < max_wall_mm))[0]
+    if not len(cand):
+        return floor
+    tree = cKDTree(vertices)
+    for start in range(0, len(cand), chunk):
+        ids = cand[start:start + chunk]
+        nbrs = tree.query_ball_point(vertices[ids], np.minimum(radius_scale * wall[ids], max_radius_mm), workers=-1)
+        counts = np.array([len(n) for n in nbrs])
+        seg = np.repeat(np.arange(len(ids)), counts)
+        flat = np.concatenate(nbrs).astype(int)
+        p = vertices[flat]
+        mean = np.zeros((len(ids), 3))
+        np.add.at(mean, seg, p)
+        mean /= counts[:, None]
+        d = p - mean[seg]
+        cov = np.zeros((len(ids), 3, 3))
+        np.add.at(cov, seg, d[:, :, None] * d[:, None, :])
+        cov /= counts[:, None, None]
+        # A rod's second spread is its own cross-section, about a third of its thickness; a sheet's is about half the ball's radius, over a wall
+        second = np.sqrt(np.clip(np.linalg.eigvalsh(cov)[:, 1], 0, None))
+        # One ray can read a voxel staircase a fifth thin, so compare with the mean wall around the vertex
+        wsum = np.zeros(len(ids))
+        np.add.at(wsum, seg, np.where(np.isfinite(wall[flat]), wall[flat], wall[ids][seg]))
+        rodness = np.clip((sheet_ratio - second / (wsum / counts)) / (sheet_ratio - rod_ratio), 0, 1)
+        # A sheet's rim is as narrow as a rod but faces mostly the sheet's two sides, while a rod faces every way round its axis
+        nm = np.zeros((len(ids), 3, 3))
+        nf = normals[flat]
+        np.add.at(nm, seg, nf[:, :, None] * nf[:, None, :])
+        round_ = np.linalg.eigvalsh(nm / counts[:, None, None])[:, 1]
+        rodness *= np.clip((round_ - round_lo) / (round_hi - round_lo), 0, 1)
+        floor[ids] = min_print_mm - rodness * (min_print_mm - rod_print_mm)
+    return floor
+
+
 def taubin(v, L, free, passes, lamb=0.5, nu=0.53):
     """Taubin smoothing of the free vertices: a shrinking step then a slightly larger growing one, which removes vertex-scale noise without shrinking the solid."""
     v = v.copy()

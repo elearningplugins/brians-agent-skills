@@ -6,7 +6,8 @@ Tested with Bambu Studio 2.08.02.61 on macOS (`brew install --cask bambu-studio`
 
 ```bash
 PY=.venv/bin/python OUT=slices CHECKS=checks scripts/slice.sh model.stl
-EXTRA="wall_generator=arachne sparse_infill_pattern=lightning sparse_infill_density=10%" PY=.venv/bin/python scripts/slice.sh model.stl
+EXTRA="sparse_infill_pattern=lightning sparse_infill_density=10%" PY=.venv/bin/python scripts/slice.sh model.stl
+EXTRA="wall_generator=classic" PY=.venv/bin/python scripts/slice.sh model.stl
 ```
 
 - `flatten_profile.py` merges a system profile's `inherits` chain from `/Applications/BambuStudio.app/Contents/Resources/profiles/BBL` into one JSON and applies `key=value` overrides; the CLI does not resolve inheritance itself.
@@ -52,4 +53,6 @@ On the 120 mm owl:
 |---|---|---|---|---|---|
 | 120 mm, smooth | 140 × 77 × 120 | 4 h 05 min | 69.6 g | 33.7 g | 31 of 31 |
 | 120 mm, 0.8 mm printable minimum | 140 × 77 × 120 | 3 h 51 min | 64.2 g | 32.1 g | 23 of 23 |
+| 120 mm, 0.8 mm, Arachne, tapered feathers, trimmed claws | 138 × 76 × 120 | 3 h 41 min | 63.0 g | 31.7 g | 25 of 25 |
+| 210 mm, same | 242 × 133 × 209 | 13 h 52 min | 277.0 g | 151.4 g | 63 of 63 |
 | 210 mm, texture relief | 244 × 134 × 210 | 14 h 31 min | 287.8 g | 150.5 g | 65 of 65 |

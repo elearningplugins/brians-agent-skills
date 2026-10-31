@@ -49,7 +49,7 @@ Ask for one physical measurement (height, span or base width) to confirm the sca
 
 ### 4. Scale
 
-Scale by the dimension that hits the bed limit, after the crop and any restored parts. Keep some clearance from the nominal build volume. Note the cost: a 210 mm owl sliced to 14.5 h and 288 g, a 120 mm one to 4 h and 70 g.
+Scale by the dimension that hits the bed limit, after the crop and any restored parts. Keep some clearance from the nominal build volume. Note the cost: a 210 mm owl sliced to 13 h 52 min and 277 g, a 120 mm one to 3 h 41 min and 63 g.
 
 ### 5. Build a watertight solid
 
@@ -66,7 +66,7 @@ Thickening moves every surface about 1 mm outward, about 12 mm on a 1.6 m sculpt
 ### 7. Restore and label invented geometry
 
 - Fill a missing symmetric part with its mirror: register the mirrored body onto itself to find the symmetry plane, then blend the mirrored part into the scanned stub and the loose tip.
-- Cut gaps the scanner bridged (separate feathers, fingers) where the scan kept grooves, as wedges in the part's best-fit plane, after hole sealing so sealing cannot bridge them again.
+- Cut gaps the scanner bridged (separate feathers, fingers) where the scan kept grooves, as wedges in the part's best-fit plane, after hole sealing so sealing cannot bridge them again. Start them part way out and taper each finger's end: straight wedges left square-ended feathers that a photo from below showed were pointed.
 - Report invented material apart from scanned material in every comparison, so it cannot flatter the accuracy figures. Show the owner a preview before making it the default.
 - Generative image-to-3D tools invent plausible detail; they were evaluated and rejected. A close-up rescan is the honest fix for detail the scan lacks.
 
@@ -75,6 +75,14 @@ Thickening moves every surface about 1 mm outward, about 12 mm on a 1.6 m sculpt
 Taubin smoothing (not Laplacian) removes vertex-scale spikes without shrinking the solid. Texture-derived relief (DeepBump height from the scan's texture) can add feather and fabric texture, but at small scale its finest detail is below a nozzle line and reads as noise: 0.35 mm of relief on a 120 mm print measured 1.6–2× the scan's roughness and failed; the same relief scaled to 210 mm passed at 1.05×. Guard walls so relief never thins one below the printable minimum.
 
 **Thin features are the main detail trade-off.** The printable minimum pads every claw, twig and ear tuft. At 1.2 mm (three 0.4 mm lines) talons printed as blunt sausages; at 0.8 mm the scan surface within 1 mm of the print rose from 93.9% to 99.4% and claws, twigs and blades matched the scan, at the cost of 19% of the surface being 0.8–1.2 mm thick. Show the owner both and let them choose strength or detail.
+
+Claws stay blunter than the photos even at 0.8 mm. What was tried, measured on the legs of the 120 mm owl:
+
+- **Diagnose the direction first.** Every leg spot more than 0.3 mm off the scan was scan lying *inside* the print: the claws were too fat, not too short. That rules out fixes that add resolution.
+- **A lower minimum on rods** (`rod_floor` in [scripts/true_surface.py](scripts/true_surface.py), 0.45 mm on claws and twigs, found by a PCA spread test plus normals facing round the axis so sheet rims keep the full minimum) cut the fat surface by only 6%: the pull-back cannot take the thickening off a rounded tip without folding it.
+- **Finer voxels** (0.25 mm against 0.35 mm) cut it by 2.5% for twice the build time. Not worth it.
+- **Trimming the thickening off rods in the voxels** ([scripts/rod_shell.py](scripts/rod_shell.py): keep only voxels within one voxel of the scan or inside it, sealing scan holes first so a holed claw is not left hollow) cut it by 9% and raised the thinnest wall from 0.38 to 0.47 mm. It costs talon roughness (1.01× to 1.18× the scan) and needs exclusions: the base's ragged bottom rim reads as rods, and trimming it roughened the base and took support islands from 23 to 54; feather tips on held wing tops went to 0.48 mm. Keep the bed band and every held region out of the trim.
+- Claw tips under a nozzle line print only with Arachne walls (step 11). The honest limit is the scan: a close-up rescan of the feet would do more than any of these.
 
 ### 9. Check the solid
 
@@ -96,12 +104,14 @@ Run [scripts/check_print.py](scripts/check_print.py) on every build (see [refere
 - **Coverage:** model surface with no extrusion within a line width is under 1%, which catches placement errors and dropped thin features.
 - **Islands:** every island from step 9 has support or model under it in the G-code. Bambu's default "remove small overhangs" left a 0.2 mm² feather tip in mid-air; the script supports small overhangs and fails on any unsupported island.
 
-Run [scripts/monte_carlo.py](scripts/monte_carlo.py) to compare settings on the actual model. On the owl, Arachne walls plus lightning infill at 10% saved 10% time and 12% filament and cut dropped thin detail from 0.071% to 0.003%.
+Run [scripts/monte_carlo.py](scripts/monte_carlo.py) to compare settings on the actual model. On the owl, Arachne walls plus lightning infill at 10% saved 10% time and 12% filament and cut dropped thin detail from 0.071% to 0.003%. `slice.sh` now uses Arachne walls by default; they also saved 12–32 min and 2–4 g per model over classic walls at a 0.8 mm minimum.
 
 ### 12. Show the user and keep the gates
 
 - Open the sliced 3MF in Bambu Studio and confirm the app actually started: `open -a` returned success once while nothing launched.
 - Every bug in this skill was found because a user saw something a check did not catch. When that happens, fix it, then add the check that would have caught it and wire it into the build or slice so it fails.
+- Keep one script that rebuilds everything from the committed scan, and test it from a fresh clone. Generated files are not committed, so the clone is the only proof the result can be reproduced: the owl's first fresh-clone run found that nothing extracted the scan's texture from the FBX. Name the recommended print and the slicer version beside it.
+- Try a geometry change on one model in a scratch folder first, then rerun every check and compare each number with the last build, not just the one the change targets. The claw trim improved the claws and quietly broke the base; only the roughness and island counts showed it.
 
 ## Honesty rules
 
@@ -117,6 +127,7 @@ Run [scripts/monte_carlo.py](scripts/monte_carlo.py) to compare settings on the 
 - [references/slicing.md](references/slicing.md): Bambu Studio CLI, G-code reading, the settings study and results
 - [references/environment.md](references/environment.md): install, tests, and timings
 - [scripts/printcheck.py](scripts/printcheck.py), [scripts/check_print.py](scripts/check_print.py): wall thickness, crossings, support, islands, roughness, wall guard
-- [scripts/true_surface.py](scripts/true_surface.py): pull-back onto the scan and fold-safe Taubin smoothing
+- [scripts/true_surface.py](scripts/true_surface.py): pull-back onto the scan, fold-safe Taubin smoothing, and the lower printable minimum on rods
+- [scripts/rod_shell.py](scripts/rod_shell.py): trims the thickening off claws and twigs in the voxel solid
 - [scripts/compare_views.py](scripts/compare_views.py): print, scan and photo side by side, plain or as distance heat maps
 - [scripts/slice.sh](scripts/slice.sh) and the G-code readers it calls: `gcode_paths.py`, `gcode_grams.py`, `coverage.py`, `islands_supported.py`, `count_supports.py`, `plot_supports.py`, `flatten_profile.py`, `monte_carlo.py`

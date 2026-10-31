@@ -10,7 +10,7 @@ MACHINE=${MACHINE:-Bambu Lab P1S 0.4 nozzle}
 PROCESS=${PROCESS:-0.20mm Standard @BBL X1C}
 FILAMENT=${FILAMENT:-Bambu PLA Basic @BBL P1S 0.4 nozzle}
 PLATE=${PLATE:-Textured PEI Plate}
-# Extra process settings as key=value words, for example "wall_generator=arachne sparse_infill_pattern=lightning sparse_infill_density=10%"
+# Extra process settings as key=value words, applied last, for example "sparse_infill_pattern=lightning sparse_infill_density=10%"
 EXTRA=${EXTRA:-}
 # Directory holding <name>-check.json from check_print.py for each STL
 CHECKS=${CHECKS:-checks}
@@ -18,8 +18,9 @@ CHECKS=${CHECKS:-checks}
 mkdir -p "$OUT/profiles"
 python3 "$SCRIPTS/flatten_profile.py" machine "$MACHINE" "$OUT/profiles/machine.json"
 # Bambu skips support under overhangs it judges small; on a scanned sculpture that left a 0.2 mm2 feather tip starting in mid-air, so small overhangs are supported
+# Arachne walls vary line width, so claw and twig tips tapered to about one 0.4 mm line print instead of being dropped; EXTRA=wall_generator=classic turns them off
 # shellcheck disable=SC2086
-python3 "$SCRIPTS/flatten_profile.py" process "$PROCESS" "$OUT/profiles/process.json" enable_support=1 support_remove_small_overhang=0 "curr_bed_type=$PLATE" $EXTRA
+python3 "$SCRIPTS/flatten_profile.py" process "$PROCESS" "$OUT/profiles/process.json" enable_support=1 support_remove_small_overhang=0 wall_generator=arachne "curr_bed_type=$PLATE" $EXTRA
 python3 "$SCRIPTS/flatten_profile.py" filament "$FILAMENT" "$OUT/profiles/filament.json"
 for stl in "$@"; do
   name=$(basename "$stl" .stl)

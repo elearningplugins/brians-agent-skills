@@ -9,11 +9,13 @@ Measured on a 1.63 m bronze owl in flight, scanned with Scaniverse (149,267 vert
 | Ground cut | `--ground-cut-m` | 0.02 m above the base's foot | Removes the flat ground skirt fused to the base |
 | Rejoin | `--rejoin-labels` | explicit reviewed IDs | A distance rule would join debris too |
 | Voxel size | `--voxel-mm` | 0.35 at 120 mm, 0.4 at 210 mm | Under a nozzle line; memory grows with the cube |
-| Thickening | `--min-wall-mm` | 1.6 (1.2 tried) | Every scanned sheet becomes a wall this thick |
+| Thickening | `--min-wall-mm` | 1.2 (1.6 earlier) | Every scanned sheet becomes a wall this thick |
 | Hole closing | `--close-scan-mm` | 8.5 mm on the real object | Sized on the object, not the print, so scale does not change what is closed |
 | Cavity seal | `--seal-scan-mm` | 30 mm on the real object | Used only to find and fill a body cavity, not as closing |
 | Base cap | `--cap-band-scan-mm` | 20 mm band | Two voxels thick; one was erased by smoothing |
-| Printable minimum | `--min-print-mm` | 1.2 (0.8 tried) | Three or two 0.4 mm lines |
+| Printable minimum | `--min-print-mm` | 0.8 (1.2 earlier) | Two 0.4 mm lines; at 1.2 mm claws printed as sausages |
+| Rod minimum | `--min-rod-print-mm` | 0.45 | About one line on claws and twigs; needs Arachne walls |
+| Rod trim | `--trim-rods` | on | Takes the thickening off rods in the voxels; skips the bed band and held regions |
 | Pull margin | `--pull-margin-mm` | 0.2 | The pull leaves walls this much over the minimum |
 | Bed fade | `--bed-fade-mm` | 2.0 | First layer stays flat |
 | Hold ramp | `--hold-ramp-mm` | 3.0 | Pull fades in near held regions instead of stepping |
@@ -40,6 +42,12 @@ Each vertex of the thickened solid sits about half the wall plus half a voxel ou
 6. Thin rounds: measure walls after the move; where a wall ended under the minimum because both sides read it obliquely, halve the pull nearest it, searching up to six rings outward for lips that are thin because of their neighbours.
 7. Report per stage the share of wanting vertices that lost pull, and masks of where.
 
+## Rods: claws, twigs, ear tufts
+
+1. `true_surface.rod_floor` gives each vertex its own printable minimum. A vertex no thicker than 2 mm is on a rod when the surface within 2.5 times its wall spreads in its second direction by under half the mean wall there, and its normals face round an axis (middle eigenvalue of their second moment above 0.4). A sheet's rim is as narrow as a rod but faces its two sides, so it keeps the full minimum. A fixed ball, tried first, fitted inside a thick wing and read it as a rod. On the owl it marked 2.7% of the surface.
+2. `rod_shell.trim_rod_shell` runs after the first marching cubes: mark the voxels within half the wall plus a voxel of rod vertices, rebuild that zone as voxels within one voxel of the scan plus their filled inside, and mesh again. Seal scan holes with the build's own closing first, and cap the zone with the untrimmed solid beyond it so the fill finds the core of a rod that runs on into a leg.
+3. Keep the bed band (twice the bed fade) and held regions out of the zone; see the measured failures in SKILL.md step 8.
+
 Rejected, in order, each measured: voxel erosion with a thin-sheet residue (lumpy); neighbourhood-thickness erosion (too thin); voxel minimum-wall restore (lumpy); mesh pull without fold control (folded in creases); cancelling the pull outright around folds with a 0.7 mm taper (309 bumps); a 2.5 mm ramp (97 bumps but the face moved 0.66 mm off the scan); relaxing only around folds (shaved box edges and thinned walls).
 
 ## Hold regions
@@ -59,9 +67,10 @@ A wing's outer primary feathers scanned as one sheet with faint grooves between 
 
 1. Fit the part's plane by SVD of its points and fix the axis signs to a known orientation (SVD signs are arbitrary).
 2. Find the grooves as darkness peaks along rays from the wrist in a face-on render.
-3. Cut a six-corner wedge per groove from part way along it to past the edge, through the sheet, from the voxel solid after hole sealing. Map the wedges through the mirror for the mirrored side.
-4. Hold the cut walls during the pull: they have no scan to pull toward, and their sharp edges fold under a normal-direction pull.
-5. Remove scan samples inside the gaps so the pull does not aim for the bridged sheet, and report the bridged sheet and the gap walls apart in the comparison.
+3. Cut a six-corner wedge per groove from part way along it (half way on the owl) to past the edge, through the sheet, from the voxel solid after hole sealing. Map the wedges through the mirror for the mirrored side.
+4. Taper each finger's end with a second wedge per gap that widens toward the edge by a share of the finger between it and its neighbour; without it the feathers ended square.
+5. Hold the cut walls during the pull: they have no scan to pull toward, and their sharp edges fold under a normal-direction pull.
+6. Remove scan samples inside the gaps so the pull does not aim for the bridged sheet, and report the bridged sheet and the gap walls apart in the comparison.
 
 An earlier attempt to rebuild wing tops from one photo (homography to a rectangle, DeepBump height, refit surfaces, cut fingers) was rejected by the owner: the fingers looked like a comb cut into a square end.
 

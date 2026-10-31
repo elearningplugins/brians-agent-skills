@@ -28,7 +28,8 @@ From file timestamps of one full run on the owl:
 
 | Step | 120 mm, 0.35 mm voxels | 210 mm, 0.4 mm voxels |
 |---|---|---|
-| Build with pull-back | 23 min | 65 min |
+| Build with pull-back and rod trim | 30 min | 90 min |
+| Build at 0.25 mm voxels instead | 56 min | not tried |
 | Solid check, scan comparison, close-ups and turntable | 5 min | 14 min |
 | One Bambu CLI slice and G-code checks | 5 min | 18 min |
 
