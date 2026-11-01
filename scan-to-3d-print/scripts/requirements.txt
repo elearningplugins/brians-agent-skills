@@ -1,5 +1,6 @@
-# Versions the scripts were tested with on Python 3.12.11 (Intel Mac); embreex makes wall rays fast, manifold3d backs the boolean unions in the tests, rtree and networkx back trimesh queries
+# Versions the scripts were tested with on Python 3.12.11 (Intel Mac); embreex makes wall rays fast, manifold3d backs the boolean unions in the tests, rtree and networkx back trimesh queries, fast-simplification backs the decimated check_print render
 embreex==4.4.0.post1
+fast-simplification==0.2.0
 hypothesis==6.170.12
 manifold3d==3.5.4
 matplotlib==3.11.2
