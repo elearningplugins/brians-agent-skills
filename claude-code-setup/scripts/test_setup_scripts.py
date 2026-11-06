@@ -89,8 +89,8 @@ def test_audit_output_never_contains_secret_values(tmp_path):
     (tmp_path / ".claude.json").write_text(json.dumps({"oauthAccount": {"emailAddress": "person@example.com", "billingType": "stripe_subscription"}, "mcpServers": {"a": {"command": "x", "env": {"API_KEY": FAKE_TOKEN}}}}), encoding="utf-8")
     (tmp_path / ".claude").mkdir()
     (tmp_path / ".claude" / "settings.json").write_text(json.dumps({"env": {"API_KEY": FAKE_TOKEN}}), encoding="utf-8")
-    result = run_script("audit_setup.py", "--home", str(tmp_path))
-    assert result.returncode == 0
+    result = run_script("audit_setup.py", "--home", str(tmp_path), "--project", str(tmp_path))
+    assert result.returncode == 1
     report = json.loads(result.stdout)
     assert FAKE_TOKEN not in result.stdout and "person@example.com" not in result.stdout
     assert {item["detail"] for item in report["mcp"]["findings"]} == {"headers.Authorization", "env.API_KEY"}
@@ -104,6 +104,18 @@ def test_usage_dedupes_blocks_and_ignores_synthetic(tmp_path):
     assert usage["requests_by_model"] == {"claude-test": 1}
     assert usage["top_sessions"][0]["context_tokens"] == 1001
     assert usage["top_sessions"][0]["output_tokens"] == 50
+
+
+def test_usage_keeps_cheap_and_full_price_tokens_separate(tmp_path):
+    write_session(tmp_path, "real", [user_line("hello"), reply_line("m1", cache_read=1000, output=50)])
+    tokens = audit_setup.usage_report(tmp_path / ".claude" / "projects", 30)["tokens"]
+    assert tokens == {"input_tokens": 1, "cache_read_tokens": 1000, "cache_write_tokens": 0, "output_tokens": 50}
+
+
+def test_unreadable_transcript_is_counted_not_skipped_silently(tmp_path):
+    write_session(tmp_path, "real", [user_line("hello"), reply_line("m1")])
+    (tmp_path / ".claude" / "projects" / "-proj" / "broken.jsonl").mkdir()
+    assert audit_setup.usage_report(tmp_path / ".claude" / "projects", 30)["unreadable_transcripts"] == 1
 
 
 def test_usage_counts_subagent_calls_and_nested_transcripts(tmp_path):
@@ -208,3 +220,50 @@ def test_apply_refuses_invalid_settings(tmp_path):
     settings.write_text("{not json", encoding="utf-8")
     assert run_script("apply_baseline.py", *args, "--write").returncode == 2
     assert settings.read_text(encoding="utf-8") == "{not json"
+
+
+@pytest.mark.parametrize("overrides,used,expected", [
+    ({"m1": {}}, {"m1": 5}, []),
+    ({}, {"m1": 5}, [("no-effort-override", "m1")]),
+    ({"old": {}, "m1": {}}, {"m1": 5}, [("unused-effort-override", "old")]),
+    ({"old": {}}, {"m1": 5, "m2": 1}, [("no-effort-override", "m1"), ("unused-effort-override", "old")]),
+    ({"m1": {}}, {"m1": 5, "m2": 1}, []),
+    ({"m1": {}}, {}, []),
+    ({"m1": {}}, {"unknown": 3}, []),
+])
+def test_effort_findings(overrides, used, expected):
+    findings = audit_setup.effort_findings({"modelSettings": overrides}, used)
+    assert [(item["check"], item["detail"]) for item in findings] == expected
+
+
+def test_overrides_report_key_names_only(tmp_path):
+    project = tmp_path / "repo"
+    (project / ".claude").mkdir(parents=True)
+    (project / ".claude" / "settings.local.json").write_text(json.dumps({"model": "sonnet", "env": {"API_KEY": FAKE_TOKEN}}), encoding="utf-8")
+    assert audit_setup.settings_overrides(tmp_path, project) == [{"file": str(project / ".claude" / "settings.local.json"), "keys": ["model"]}]
+
+
+def test_overrides_flag_corrupt_file_and_skip_the_user_file_itself(tmp_path):
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "settings.json").write_text('{"model": "opus"}', encoding="utf-8")
+    assert audit_setup.settings_overrides(tmp_path, tmp_path) == []
+    (tmp_path / ".claude" / "settings.local.json").write_text("{bad", encoding="utf-8")
+    assert audit_setup.settings_overrides(tmp_path, tmp_path)[0]["keys"] == ["unreadable"]
+
+
+def test_corrupt_mcp_config_fails_instead_of_reading_as_empty(tmp_path):
+    (tmp_path / ".cursor").mkdir()
+    (tmp_path / ".cursor" / "mcp.json").write_text("{bad", encoding="utf-8")
+    result = run_script("audit_setup.py", "--home", str(tmp_path), "--project", str(tmp_path))
+    assert result.returncode == 2
+    assert json.loads(result.stdout)["unreadable_configs"] == [str(tmp_path / ".cursor" / "mcp.json")]
+
+
+def test_new_computer_goes_from_failing_audit_to_clean_after_apply(tmp_path):
+    audit_args = ["--home", str(tmp_path), "--project", str(tmp_path)]
+    assert run_script("audit_setup.py", *audit_args).returncode == 1
+    assert run_script("apply_baseline.py", "--home", str(tmp_path), "--write").returncode == 0
+    result = run_script("audit_setup.py", *audit_args)
+    assert result.returncode == 0, result.stdout
+    assert json.loads(result.stdout)["settings"]["drift"] == []
+    assert "single line" in (tmp_path / ".claude" / "CLAUDE.md").read_text(encoding="utf-8")

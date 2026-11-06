@@ -8,6 +8,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 from collections import Counter
 from pathlib import Path
@@ -20,6 +21,7 @@ INITIALIZE = re.compile(r'"method"\s*:\s*"initialize"')
 VISIBLE_ENV = {"ANTHROPIC_MODEL", "ANTHROPIC_SMALL_FAST_MODEL", "CLAUDE_CODE_SUBAGENT_MODEL", "CLAUDE_EFFORT"}
 ENV_PREFIXES = ("ANTHROPIC_", "CLAUDE_")
 SYNTHETIC_MODEL = "<synthetic>"
+OVERRIDE_KEYS = ("model", "effortLevel", "modelSettings", "permissions")
 
 
 def load_json(path: Path) -> dict | None:
@@ -122,17 +124,14 @@ def mcp_report(home: Path) -> dict:
 def read_entries(path: Path) -> list[dict]:
     """Parse a JSONL transcript, skipping lines that are not JSON objects."""
     entries = []
-    try:
-        with path.open(encoding="utf-8", errors="ignore") as handle:
-            for line in handle:
-                try:
-                    entry = json.loads(line)
-                except ValueError:
-                    continue
-                if isinstance(entry, dict):
-                    entries.append(entry)
-    except OSError:
-        return []
+    with path.open(encoding="utf-8", errors="ignore") as handle:
+        for line in handle:
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(entry, dict):
+                entries.append(entry)
     return entries
 
 
@@ -178,11 +177,14 @@ def session_usage(entries: list[dict]) -> dict:
                 seen_calls.add(block.get("id"))
                 tool_input = block.get("input") or {}
                 agent_calls[f"{tool_input.get('subagent_type', 'default')}/{tool_input.get('model', 'inherit')}"] += 1
-    total = {"requests": len(by_id), "output_tokens": 0, "context_tokens": 0, "peak_context": 0}
+    total = {"requests": len(by_id), "input_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "output_tokens": 0, "context_tokens": 0, "peak_context": 0}
     for message in by_id.values():
         models[message.get("model") or "unknown"] += 1
         usage = message.get("usage") or {}
         context = sum(usage.get(key, 0) or 0 for key in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"))
+        total["input_tokens"] += usage.get("input_tokens", 0) or 0
+        total["cache_read_tokens"] += usage.get("cache_read_input_tokens", 0) or 0
+        total["cache_write_tokens"] += usage.get("cache_creation_input_tokens", 0) or 0
         total["output_tokens"] += usage.get("output_tokens", 0) or 0
         total["context_tokens"] += context
         total["peak_context"] = max(total["peak_context"], context)
@@ -199,15 +201,16 @@ def usage_report(projects: Path, days: int) -> dict:
     cutoff = time.time() - days * 86400
     models, agent_calls = Counter(), Counter()
     sessions = []
-    handshake_files = handshake_bytes = subagent_transcripts = 0
+    handshake_files = handshake_bytes = subagent_transcripts = unreadable = 0
     for path in transcript_files(projects):
         try:
             stat = path.stat()
+            if stat.st_mtime < cutoff:
+                continue
+            entries = read_entries(path)
         except OSError:
+            unreadable += 1
             continue
-        if stat.st_mtime < cutoff:
-            continue
-        entries = read_entries(path)
         if is_handshake_transcript(entries):
             handshake_files += 1
             handshake_bytes += stat.st_size
@@ -232,11 +235,13 @@ def usage_report(projects: Path, days: int) -> dict:
         "sessions": len(sessions),
         "requests": all_requests,
         "average_context_per_request": sum(item["context_tokens"] for item in sessions) // max(all_requests, 1),
+        "tokens": {key: sum(item[key] for item in sessions) for key in ("input_tokens", "cache_read_tokens", "cache_write_tokens", "output_tokens")},
         "requests_by_model": dict(models.most_common()),
         "subagent_calls": dict(agent_calls.most_common()),
         "subagent_transcripts": subagent_transcripts,
         "top_sessions": top,
         "handshake_transcripts": {"files": handshake_files, "bytes": handshake_bytes},
+        "unreadable_transcripts": unreadable,
     }
 
 
@@ -262,14 +267,57 @@ def cli_version() -> str | None:
         return None
 
 
-def audit(home: Path, baseline: dict, days: int) -> dict:
-    """Build the full report from one home directory."""
+def unreadable_configs(home: Path) -> list[str]:
+    """Name config files that exist but cannot be parsed, so a corrupt file never reads as an empty one."""
+    paths = [home / ".claude" / "settings.json", home / ".claude.json", home / ".cursor" / "mcp.json"]
+    return [str(path) for path in paths if path.exists() and load_json(path) is None]
+
+
+def settings_overrides(home: Path, project: Path) -> list[dict]:
+    """List other settings files that set baseline keys and can win over the user file, by key name only."""
+    global_settings = (home / ".claude" / "settings.json").resolve()
+    paths = [home / ".claude" / "settings.local.json", project / ".claude" / "settings.json", project / ".claude" / "settings.local.json"]
+    found = []
+    for path in paths:
+        if not path.exists() or path.resolve() == global_settings:
+            continue
+        data = load_json(path)
+        keys = ["unreadable"] if data is None else [key for key in OVERRIDE_KEYS if key in data]
+        if keys:
+            found.append({"file": str(path), "keys": keys})
+    return found
+
+
+def effort_findings(settings: dict, requests_by_model: dict) -> list[dict]:
+    """Flag when the most-used model has no effort override, or an override matches no model in use."""
+    overrides = settings.get("modelSettings") or {}
+    used = [model for model in requests_by_model if model != "unknown"]
+    if not used:
+        return []
+    findings = [{"check": "unused-effort-override", "detail": model} for model in overrides if model not in used]
+    if used[0] not in overrides:
+        findings.insert(0, {"check": "no-effort-override", "detail": used[0]})
+    return findings
+
+
+def exit_code(report: dict) -> int:
+    """Return 2 when a config is unreadable, 1 when anything needs attention, and 0 when clean."""
+    if report["unreadable_configs"] or report["usage"]["unreadable_transcripts"]:
+        return 2
+    settings = report["settings"]
+    return 1 if settings["drift"] or settings["overrides"] or settings["effort_findings"] or report["mcp"]["findings"] else 0
+
+
+def audit(home: Path, baseline: dict, days: int, project: Path) -> dict:
+    """Build the full report from one home directory and one project directory."""
     settings_path = home / ".claude" / "settings.json"
     settings = load_json(settings_path)
     account = (load_json(home / ".claude.json") or {}).get("oauthAccount") or {}
     agents = home / ".claude" / "agents"
+    usage = usage_report(home / ".claude" / "projects", days)
     return {
         "version": cli_version(),
+        "unreadable_configs": unreadable_configs(home),
         "billing_type": account.get("billingType"),
         "settings": {
             "exists": settings_path.exists(),
@@ -280,25 +328,30 @@ def audit(home: Path, baseline: dict, days: int) -> dict:
             "deny": lookup(settings or {}, "permissions.deny"),
             "hook_events": sorted((settings or {}).get("hooks") or {}),
             "drift": config_drift(settings or {}, baseline),
+            "overrides": settings_overrides(home, project),
+            "effort_findings": effort_findings(settings or {}, usage["requests_by_model"]),
         },
         "custom_agents": sorted(path.stem for path in agents.glob("*.md")) if agents.is_dir() else [],
         "env": env_report(),
         "mcp": mcp_report(home),
-        "usage": usage_report(home / ".claude" / "projects", days),
+        "usage": usage,
     }
 
 
-def main() -> None:
+def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--home", type=Path, default=Path.home(), help="home directory to audit")
     parser.add_argument("--baseline", type=Path, default=SKILL_DIR / "assets" / "baseline-settings.json")
     parser.add_argument("--days", type=int, default=30, help="usage window in days")
+    parser.add_argument("--project", type=Path, default=Path.cwd(), help="project whose settings can override the user file")
     args = parser.parse_args()
     baseline = load_json(args.baseline)
     if baseline is None:
         parser.error(f"cannot read baseline {args.baseline}")
-    print(json.dumps(audit(args.home, baseline, args.days), indent=2))
+    report = audit(args.home, baseline, args.days, args.project)
+    print(json.dumps(report, indent=2))
+    return exit_code(report)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

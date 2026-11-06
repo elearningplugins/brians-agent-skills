@@ -196,15 +196,16 @@ Do not evenly space transcript words — that is what made captions look unsynce
 
 ## `claude-code-setup`
 
-Carry a Claude Code setup to another computer and check that it is actually in effect:
+Carry a Claude Code setup to another computer, then measure what is using its limits:
 
 * Compare settings with an editable baseline and apply the differences only after a dry run, with backups
 * Check Claude Code and Cursor MCP entries for bare `claude` commands, missing paths and plaintext tokens, reporting where a secret sits and never its value
 * Measure usage from local transcripts, deduped by message, to show which sessions and how much context drive it
-* Confirm subagents are really off, from the absence of calls and transcripts
+* Show whether subagents ran, from their calls and transcripts
+* Exit non-zero on any finding, and fail outright if a config cannot be read, so a corrupt file never reads as a clean one
 * Remove transcripts left by failed MCP handshakes, keeping any session a model answered
 
-The skill came from an audit where the deny rule was working, and the real problems were a Cursor entry starting `claude` all day and a few sessions near 1M tokens of context.
+The skill came from an audit where the subagent deny rule was working, while a Cursor entry had been starting `claude` about 250 times a day and three sessions had reached about 960K tokens of context.
 
 ---
 
