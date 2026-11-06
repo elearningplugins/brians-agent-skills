@@ -15,7 +15,6 @@ sys.path.insert(0, str(SCRIPTS))
 
 import apply_baseline  # noqa: E402
 import audit_setup  # noqa: E402
-import clean_handshake_transcripts  # noqa: E402
 
 # Built by concatenation so secret scanners do not flag a fake token.
 FAKE_TOKEN = "ghp_" + "a1B2c3D4" * 5
@@ -147,21 +146,6 @@ def test_usage_window_excludes_old_transcripts(tmp_path):
 def test_is_handshake_transcript(tmp_path, lines, expected):
     path = write_session(tmp_path, "s", lines)
     assert audit_setup.is_handshake_transcript(audit_setup.read_entries(path)) is expected
-
-
-def test_cleanup_dry_run_keeps_and_delete_removes_only_handshakes(tmp_path):
-    empty = write_session(tmp_path, "empty", [user_line(HANDSHAKE)])
-    real = write_session(tmp_path, "real", [user_line(HANDSHAKE), reply_line("m1")])
-    dry = run_script("clean_handshake_transcripts.py", "--home", str(tmp_path))
-    assert "1 handshake transcripts" in dry.stdout and empty.exists()
-    run_script("clean_handshake_transcripts.py", "--home", str(tmp_path), "--delete")
-    assert not empty.exists() and real.exists()
-
-
-def test_cleanup_skips_recent_files(tmp_path):
-    path = write_session(tmp_path, "new", [user_line(HANDSHAKE)])
-    os.utime(path, None)
-    assert clean_handshake_transcripts.find_targets(tmp_path / ".claude" / "projects", 120) == []
 
 
 def test_merge_keeps_unrelated_keys_and_existing_deny_order():

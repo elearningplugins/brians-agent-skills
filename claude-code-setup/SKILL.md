@@ -14,8 +14,7 @@ Bring a machine to a known Claude Code baseline, then measure what is using its 
 - [ ] 2. Report, separating measured from inferred
 - [ ] 3. Apply the baseline after a dry run
 - [ ] 4. Set up MCP servers
-- [ ] 5. Clean up handshake transcripts
-- [ ] 6. Verify in a new session
+- [ ] 5. Verify in a new session
 ```
 
 Scripts need `python3` and only the standard library. They are tested on macOS. Nothing else has been run yet, so report it if you are on Linux or Windows and a path does not resolve.
@@ -81,13 +80,13 @@ Lead with the verdict, then cover each area below. Mark each claim as **measured
 | `no-effort-override` | The most-used model has no override, so it runs at the `effortLevel` fallback. | Add its model ID to the baseline. |
 | `unused-effort-override` | An override matches no model used in the window. | Remove it if that model is retired. It may just be unused lately. |
 | `settings.overrides` | Another settings file sets a baseline key and can win. | Ask whether it is deliberate. |
-| `handshake_transcripts` above 0 | Leftovers from a bare `claude` entry. | Fix the entry, then step 5. |
+| `handshake_transcripts` above 0 | Leftovers from a bare `claude` entry. | Fix the entry. The files are harmless, and Claude Code appears to prune them after about 30 days. Delete them only if the user asks. |
 
 ### Limits of the numbers
 
 - Transcripts cover only what Claude Code has not pruned, about 30 days by default. Do not confirm or deny a figure older than that.
 - `context_tokens` adds cheap cache reads to full-price tokens, so its shares show where context piled up, not cost or limit use. Use `usage.tokens` when the difference matters.
-- The audit reads config files. It does not see managed settings or what a running session loaded, so only step 6 shows a setting is in effect.
+- The audit reads config files. It does not see managed settings or what a running session loaded, so only step 5 shows a setting is in effect.
 
 ## 3. Apply the baseline
 
@@ -114,18 +113,7 @@ Ask which other servers this machine needs. A local server needs its repository 
 claude mcp add --scope user <name> -- node /absolute/path/to/server.js
 ```
 
-## 5. Clean up handshake transcripts
-
-Only after the broken entry is gone, and with the user's go-ahead:
-
-```bash
-python3 "$SKILL_DIR/scripts/clean_handshake_transcripts.py"
-python3 "$SKILL_DIR/scripts/clean_handshake_transcripts.py" --delete
-```
-
-It matches only transcripts whose whole first prompt is an MCP `initialize` message and that no model answered. A session with any real reply is kept, and so is anything changed in the last 2 minutes. Deletion cannot be undone.
-
-## 6. Verify
+## 5. Verify
 
 1. Run the audit again and confirm it exits 0, or that every remaining finding is one the user chose to keep.
 2. Start a new session, because running sessions keep their old settings. Confirm the `Agent` tool is unavailable and the model and effort are as expected.

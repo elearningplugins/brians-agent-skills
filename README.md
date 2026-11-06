@@ -203,7 +203,6 @@ Carry a Claude Code setup to another computer, then measure what is using its li
 * Measure usage from local transcripts, deduped by message, to show which sessions and how much context drive it
 * Show whether subagents ran, from their calls and transcripts
 * Exit non-zero on any finding, and fail outright if a config cannot be read, so a corrupt file never reads as a clean one
-* Remove transcripts left by failed MCP handshakes, keeping any session a model answered
 
 The skill came from an audit where the subagent deny rule was working, while a Cursor entry had been starting `claude` about 250 times a day and three sessions had reached about 960K tokens of context.
 
