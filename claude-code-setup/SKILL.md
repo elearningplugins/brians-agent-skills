@@ -1,21 +1,21 @@
 ---
 name: claude-code-setup
-description: Audits and reproduces a Claude Code setup on any computer - default model, effort levels, the subagent deny rule, global CLAUDE.md rules and MCP servers - and measures where usage goes from local transcripts. Finds config drift, settings that override the baseline, broken or runaway MCP entries such as a Cursor entry that starts bare `claude`, plaintext tokens and context-heavy sessions. Use when setting up Claude Code on a new machine, syncing settings between computers, checking which model or effort is active, asking whether subagents are off, hitting usage limits, or asking why Claude usage is high, even if the user never says "audit".
+description: Sets up Claude Code on a new computer so it works like the one the user is used to - default model, effort levels, the subagent deny rule, global CLAUDE.md rules and MCP servers - then audits the result for drift, overrides, broken MCP entries and plaintext tokens. Use when starting on a new or reinstalled computer, getting Claude Code configured the way the user likes it, or checking that a computer still matches that setup, even if the user never says "setup".
 ---
 
 # Claude Code Setup
 
-Bring a machine to a known Claude Code baseline, then measure what is using its limits. The audit exists because the settings that looked like the problem were fine: on the machine this came from the subagent deny rule was working, while a Cursor entry had started `claude` about 250 times a day for weeks, unnoticed. Do not call a setup correct or a cause proven until the numbers say so, and change nothing until the user has seen the planned changes.
+Take a new computer from a fresh Claude Code install to the setup the user is used to, then prove it took effect. The audit is there because a setup can look right and not be: on the machine this came from, a Cursor entry had started `claude` about 250 times a day for weeks, unnoticed. Claude Code must already be installed and signed in. Do not call the setup finished until the audit says so, and change nothing until the user has seen the planned changes.
 
-This skill is one file. Build the audit script from the spec below each time it is needed, and do not commit it anywhere.
+This skill is one file. Build the audit script from the spec in step 3 each time it is needed, and do not commit it anywhere.
 
 ## Workflow
 
 ```
-- [ ] 1. Build the audit script and pass the acceptance checks
-- [ ] 2. Run it and report, separating measured from inferred
-- [ ] 3. Apply the baseline after showing the planned changes
-- [ ] 4. Set up MCP servers
+- [ ] 1. Apply the baseline after showing the planned changes
+- [ ] 2. Set up MCP servers
+- [ ] 3. Build the audit script and pass the acceptance checks
+- [ ] 4. Run it and report, separating measured from inferred
 - [ ] 5. Verify in a new session
 ```
 
@@ -53,7 +53,33 @@ MCP configs often hold plaintext tokens. Do not `Read` or `cat` `~/.cursor/mcp.j
 - Have the user run commands containing tokens in a separate terminal. The `!` prefix does not help, because the command and its output land in the conversation.
 - Deleting a file does not make a token safe. If a token may be exposed, tell the user plainly, have them revoke it, and name the remaining copies.
 
-## 1. Build the audit script
+## 1. Apply the baseline
+
+Plan the change with a small script that prints only baseline keys, because `settings.json` can hold secrets. Show the planned changes and ask before writing.
+
+- Keep every key the baseline does not name.
+- Replace scalars, merge objects, and add missing list items after the existing ones, so other deny rules stay.
+- Refuse to touch a `settings.json` that is not valid JSON.
+- Copy each changed file beside itself as `<name>.bak-<unix-time>`, keeping its mode, and replace the original in one step so a failed write cannot truncate it.
+- Add each missing rule to `~/.claude/CLAUDE.md` as a `- ` bullet under a `# Personal preferences` heading, creating the file if needed.
+
+If this machine has deliberately different values, ask rather than overwrite them. Running the same apply twice must change nothing.
+
+## 2. Set up MCP servers
+
+Add servers with the CLI rather than by editing `~/.claude.json`:
+
+```bash
+claude mcp add --scope user --transport http context7 https://mcp.context7.com/mcp
+```
+
+Ask which other servers this machine needs. A local server needs its repository cloned and built first:
+
+```bash
+claude mcp add --scope user <name> -- node /absolute/path/to/server.js
+```
+
+## 3. Build the audit script
 
 Write one Python 3 script, standard library only, to a temporary folder as `audit_setup.py`. It must be read-only: it writes no files and prints only the JSON report. It takes `--home` (default the user's home), `--project` (default the current folder) and `--days` (default 30), and it embeds the baseline above.
 
@@ -132,9 +158,9 @@ Do not run the script on real config until it passes these on fake homes in the 
 9. A project override reports key names and no values.
 10. A home matching the baseline except for a missing `CLAUDE.md` rule exits 1.
 
-## 2. Run and report
+## 4. Run and report
 
-Run the script from the project in question. Treat exit 2 as a failed audit, not a clean one.
+Run the script from the project in question. Treat exit 2 as a failed audit, not a clean one. On a new computer `usage` is empty, so say there is no history yet, not that usage looks clean.
 
 Lead with the verdict, then cover each area. Mark each claim as **measured** or **inferred**.
 
@@ -159,41 +185,15 @@ Limits to state when they matter:
 - `context_tokens` adds cheap cache reads to full-price tokens, so its shares show where context piled up, not cost or limit use.
 - The audit reads config files. It does not see managed settings, project `.mcp.json` files or what a running session loaded, so only step 5 shows a setting is in effect.
 
-## 3. Apply the baseline
-
-Plan the change with a small script that prints only baseline keys, because `settings.json` can hold secrets. Show the planned changes and ask before writing.
-
-- Keep every key the baseline does not name.
-- Replace scalars, merge objects, and add missing list items after the existing ones, so other deny rules stay.
-- Refuse to touch a `settings.json` that is not valid JSON.
-- Copy each changed file beside itself as `<name>.bak-<unix-time>`, keeping its mode, and replace the original in one step so a failed write cannot truncate it.
-- Add each missing rule to `~/.claude/CLAUDE.md` as a `- ` bullet under a `# Personal preferences` heading, creating the file if needed.
-
-If this machine has deliberately different values, ask rather than overwrite them. Running the same apply twice must change nothing.
-
-## 4. Set up MCP servers
-
-Add servers with the CLI rather than by editing `~/.claude.json`:
-
-```bash
-claude mcp add --scope user --transport http context7 https://mcp.context7.com/mcp
-```
-
-Ask which other servers this machine needs. A local server needs its repository cloned and built first:
-
-```bash
-claude mcp add --scope user <name> -- node /absolute/path/to/server.js
-```
-
 ## 5. Verify
 
-1. Run the audit again and confirm it exits 0, or that every remaining finding is one the user chose to keep.
+1. Fix what the audit found, then run it again and confirm it exits 0, or that every remaining finding is one the user chose to keep.
 2. Start a new session, because running sessions keep their old settings. Confirm the `Agent` tool is unavailable and the model and effort are as expected.
 3. For a removed MCP entry, reload the client (in Cursor, **Developer: Reload Window**), then count new handshake transcripts over a period longer than the old retry gap. On the original machine that gap was usually under 2 minutes, but 10% of gaps ran past 20 minutes.
 
 ## Advising on usage
 
-Tie advice to this machine's numbers. Every request re-reads the context, so these are the levers, but this skill has not measured how much each one saves. Say so, and compare the same audit window before and after if the user wants proof.
+This applies once the computer has transcript history. Tie advice to this machine's numbers. Every request re-reads the context, so these are the levers, but this skill has not measured how much each one saves. Say so, and compare the same audit window before and after if the user wants proof.
 
 - Run `/clear` between unrelated tasks, and `/compact` when a long session must continue.
 - Start Claude in the repository the work belongs to, which keeps sessions shorter and project memory separate.
