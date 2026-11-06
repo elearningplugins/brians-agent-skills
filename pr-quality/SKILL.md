@@ -259,6 +259,16 @@ Use the repository's required template if one exists, while preserving the evide
 
 Keep the body scannable. Prefer concrete evidence over long narrative.
 
+### Acronyms
+
+If the title or body uses an acronym or initialism, end the body with a dedicated `## Acronyms` section. Omit the section when there are none.
+
+- List each acronym once, alphabetically, as `- **LOC** - lines of code`.
+- Skip these common terms: `PR`, `API`, `URL`, `HTTP`/`HTTPS`, `HTML`, `CSS`, `JSON`, `SQL`, `CI`, `UI`, `ID`. List everything else, including `CD`, `E2E`, `SDK`, `CLI`, `ORM`, `JWT`, `LOC`, and product or domain terms.
+- Do not expand an acronym where it appears. Write `LOC`, not `lines of code (LOC)`, and leave the meaning to the section.
+- Skip acronyms that appear only in code, file paths, or ticket keys.
+- Keep this section last, after `## Known limitations / follow-ups`.
+
 ## 8. Final readiness check
 
 - [ ] Problem and verified root cause are clear.
@@ -274,6 +284,7 @@ Keep the body scannable. Prefer concrete evidence over long narrative.
 - [ ] Staff-level solution review challenged the approach itself.
 - [ ] Known limits, unverified areas, and follow-ups are stated.
 - [ ] No claim overstates what the evidence proves.
+- [ ] Acronyms are not expanded inline and are all listed in a final `## Acronyms` section.
 - [ ] No merge/deploy/publish is performed without explicit instruction.
 
 ## Output behavior

@@ -93,3 +93,9 @@ Net production change: **+0 lines**.
 ## Known limitations / follow-ups
 
 <!-- Time bombs, deliberately deferred root-class fixes, rollout coordination, or unverified areas. -->
+
+## Acronyms
+
+<!-- Keep this section last. List every acronym used above except the common terms SKILL.md exempts, or delete the section if there are none. Do not expand acronyms inline. -->
+
+- **ABC** - What the acronym stands for
