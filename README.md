@@ -200,11 +200,9 @@ Get a new computer running Claude Code the way you are used to, then prove the s
 
 * Compare settings with an editable baseline and apply the differences only after showing them, with backups
 * Check Claude Code and Cursor MCP entries for bare `claude` commands, missing paths and plaintext tokens, reporting where a secret sits and never its value
-* Measure usage from local transcripts, deduped by message, to show which sessions and how much context drive it
-* Show whether subagents ran, from their calls and transcripts
 * Treat a config it cannot read as a failed audit, so a corrupt file never reads as a clean one
 
-The skill came from an audit where the subagent deny rule was working, while a Cursor entry had been starting `claude` about 250 times a day and three sessions had reached about 960K tokens of context.
+The audit came from a review where a Cursor entry had been starting `claude` about 250 times a day, unnoticed.
 
 It is one file: the agent rebuilds the audit from the spec in `SKILL.md`, then proves it on fake homes before it reads real config.
 
