@@ -135,6 +135,7 @@ These skills are experiments in doing exactly that.
 | [`pr-quality`](./pr-quality)           | Prepare and review pull requests using exact diff accounting, testing evidence, blast radius analysis, implementation review, and questions designed to challenge whether the proposed solution is actually the right one. |
 | [`qa-unit-testing`](./qa-unit-testing) | Build stronger TypeScript unit tests by combining example based tests, fast-check property testing, and Stryker mutation analysis to find gaps ordinary coverage metrics miss.                                             |
 | [`linkedin-vertical-captioned-clip`](./linkedin-vertical-captioned-clip) | Cut a live/stream recording into a LinkedIn 9:16 Remotion clip with TikTok-style one-word captions from Parakeet word timestamps (auto-editor), face-safe placement, filler stripping, and a short end fade. |
+| [`claude-code-setup`](./claude-code-setup) | Bring a computer to a known Claude Code baseline for model, effort, subagents and MCP servers, then measure where usage goes from local transcripts, with secrets masked and every change shown as a dry run first. |
 
 More skills will be added as Brian continues converting useful engineering practices into repeatable agent workflows.
 
@@ -193,6 +194,20 @@ Do not evenly space transcript words — that is what made captions look unsynce
 
 ---
 
+## `claude-code-setup`
+
+Carry a Claude Code setup to another computer and check that it is actually in effect:
+
+* Compare settings with an editable baseline and apply the differences only after a dry run, with backups
+* Check Claude Code and Cursor MCP entries for bare `claude` commands, missing paths and plaintext tokens, reporting where a secret sits and never its value
+* Measure usage from local transcripts, deduped by message, to show which sessions and how much context drive it
+* Confirm subagents are really off, from the absence of calls and transcripts
+* Remove transcripts left by failed MCP handshakes, keeping any session a model answered
+
+The skill came from an audit where the deny rule was working, and the real problems were a Cursor entry starting `claude` all day and a few sessions near 1M tokens of context.
+
+---
+
 # Installation
 
 These skills follow the open [Agent Skills](https://agentskills.io) format and can be used by tools that support `SKILL.md`.
@@ -239,6 +254,7 @@ or:
 gh skill install elearningplugins/brians-agent-skills pr-quality
 gh skill install elearningplugins/brians-agent-skills qa-unit-testing
 gh skill install elearningplugins/brians-agent-skills linkedin-vertical-captioned-clip
+gh skill install elearningplugins/brians-agent-skills claude-code-setup
 ```
 
 ## Manual installation
@@ -289,6 +305,15 @@ that are missing.
 
 Turn this horizontal multi-cam recording into a 9:16 LinkedIn clip with
 one-word captions synced to the audio. Follow the skill in this repo.
+```
+
+## Set up Claude Code on a new computer
+
+```text
+/claude-code-setup
+
+Audit this machine against my baseline, show me the dry run, and tell me
+where my usage is going.
 ```
 
 ---
