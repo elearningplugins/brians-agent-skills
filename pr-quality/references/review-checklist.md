@@ -40,6 +40,10 @@ Why this version floor, timeout, retry count, concurrency limit, threshold, cach
 ### Right solution
 Is the approach effective, efficient, maintainable, and performant, not merely correct?
 
+## PR body
+
+Are all acronyms listed in a final `## Acronyms` section rather than expanded inline?
+
 ## Review-writing style
 
 Lead with findings that can change the decision to merge. Prefer a concrete failure mode, why it matters, evidence, and the smallest credible correction. Keep comment replies short and human.
