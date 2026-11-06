@@ -135,6 +135,7 @@ These skills are experiments in doing exactly that.
 | [`pr-quality`](./pr-quality)           | Prepare and review pull requests using exact diff accounting, testing evidence, blast radius analysis, implementation review, and questions designed to challenge whether the proposed solution is actually the right one. |
 | [`qa-unit-testing`](./qa-unit-testing) | Build stronger TypeScript unit tests by combining example based tests, fast-check property testing, and Stryker mutation analysis to find gaps ordinary coverage metrics miss.                                             |
 | [`linkedin-vertical-captioned-clip`](./linkedin-vertical-captioned-clip) | Cut a live/stream recording into a LinkedIn 9:16 Remotion clip with TikTok-style one-word captions from Parakeet word timestamps (auto-editor), face-safe placement, filler stripping, and a short end fade. |
+| [`claude-code-setup`](./claude-code-setup) | Set up Claude Code on a new computer the way you are used to, covering model, effort, subagents and MCP servers, then audit the result with secrets masked and every change shown first. |
 
 More skills will be added as Brian continues converting useful engineering practices into repeatable agent workflows.
 
@@ -193,6 +194,20 @@ Do not evenly space transcript words — that is what made captions look unsynce
 
 ---
 
+## `claude-code-setup`
+
+Get a new computer running Claude Code the way you are used to, then prove the setup took effect:
+
+* Compare settings with an editable baseline and apply the differences only after showing them, with backups
+* Check Claude Code and Cursor MCP entries for bare `claude` commands, missing paths and plaintext tokens, reporting where a secret sits and never its value
+* Treat a config it cannot read as a failed audit, so a corrupt file never reads as a clean one
+
+The audit came from a review where a Cursor entry had been starting `claude` about 250 times a day, unnoticed.
+
+It is one file: the agent rebuilds the audit from the spec in `SKILL.md`, then proves it on fake homes before it reads real config.
+
+---
+
 # Installation
 
 These skills follow the open [Agent Skills](https://agentskills.io) format and can be used by tools that support `SKILL.md`.
@@ -239,6 +254,7 @@ or:
 gh skill install elearningplugins/brians-agent-skills pr-quality
 gh skill install elearningplugins/brians-agent-skills qa-unit-testing
 gh skill install elearningplugins/brians-agent-skills linkedin-vertical-captioned-clip
+gh skill install elearningplugins/brians-agent-skills claude-code-setup
 ```
 
 ## Manual installation
@@ -289,6 +305,15 @@ that are missing.
 
 Turn this horizontal multi-cam recording into a 9:16 LinkedIn clip with
 one-word captions synced to the audio. Follow the skill in this repo.
+```
+
+## Set up Claude Code on a new computer
+
+```text
+/claude-code-setup
+
+This is a new computer. Set up Claude Code the way I am used to, show me
+the changes first, then audit the result.
 ```
 
 ---
