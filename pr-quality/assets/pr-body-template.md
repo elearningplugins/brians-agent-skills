@@ -98,4 +98,4 @@ Net production change: **+0 lines**.
 
 <!-- Keep this section last. List every acronym used above, or delete the section if there are none. Do not expand acronyms inline. -->
 
-- **ABC** — What the acronym stands for
+- **ABC** - What the acronym stands for
