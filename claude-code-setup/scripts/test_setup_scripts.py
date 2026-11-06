@@ -267,3 +267,20 @@ def test_new_computer_goes_from_failing_audit_to_clean_after_apply(tmp_path):
     assert result.returncode == 0, result.stdout
     assert json.loads(result.stdout)["settings"]["drift"] == []
     assert "single line" in (tmp_path / ".claude" / "CLAUDE.md").read_text(encoding="utf-8")
+
+
+def test_each_attention_item_alone_makes_the_audit_exit_1():
+    def report(**settings):
+        base = {"drift": [], "overrides": [], "effort_findings": []}
+        return {"unreadable_configs": [], "usage": {"unreadable_transcripts": 0}, "mcp": {"findings": []}, "settings": {**base, **settings}}
+
+    assert audit_setup.exit_code(report()) == 0
+    assert audit_setup.exit_code(report(drift=[{}])) == 1
+    assert audit_setup.exit_code(report(overrides=[{}])) == 1
+    assert audit_setup.exit_code(report(effort_findings=[{}])) == 1
+    with_mcp = report()
+    with_mcp["mcp"]["findings"] = [{}]
+    assert audit_setup.exit_code(with_mcp) == 1
+    unreadable = report(drift=[{}])
+    unreadable["usage"]["unreadable_transcripts"] = 1
+    assert audit_setup.exit_code(unreadable) == 2
