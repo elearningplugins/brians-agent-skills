@@ -264,9 +264,9 @@ Keep the body scannable. Prefer concrete evidence over long narrative.
 If the title or body uses an acronym or initialism, end the body with a dedicated `## Acronyms` section. Omit the section when there are none.
 
 - List each acronym once, alphabetically, as `- **LOC** - lines of code`.
-- Include common ones such as `API` and `CI`; the section is for any reader, not only those who already know the term.
+- Skip these common terms: `PR`, `API`, `URL`, `HTTP`/`HTTPS`, `HTML`, `CSS`, `JSON`, `SQL`, `CI`, `UI`, `ID`. List everything else, including `CD`, `E2E`, `SDK`, `CLI`, `ORM`, `JWT`, `LOC`, and product or domain terms.
 - Do not expand an acronym where it appears. Write `LOC`, not `lines of code (LOC)`, and leave the meaning to the section.
-- Skip `PR` itself, and skip acronyms that appear only in the template's own headings, or in code, file paths, or ticket keys.
+- Skip acronyms that appear only in code, file paths, or ticket keys.
 - Keep this section last, after `## Known limitations / follow-ups`.
 
 ## 8. Final readiness check

@@ -42,7 +42,7 @@ Is the approach effective, efficient, maintainable, and performant, not merely c
 
 ## PR body
 
-Are all acronyms other than `PR` listed in a final `## Acronyms` section rather than expanded inline?
+Are all acronyms other than the common terms exempted in `SKILL.md` listed in a final `## Acronyms` section rather than expanded inline?
 
 ## Review-writing style
 

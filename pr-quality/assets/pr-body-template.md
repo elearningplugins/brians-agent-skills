@@ -96,6 +96,6 @@ Net production change: **+0 lines**.
 
 ## Acronyms
 
-<!-- Keep this section last. List every acronym used above except PR, or delete the section if there are none. Do not expand acronyms inline. -->
+<!-- Keep this section last. List every acronym used above except the common terms SKILL.md exempts, or delete the section if there are none. Do not expand acronyms inline. -->
 
 - **ABC** - What the acronym stands for
