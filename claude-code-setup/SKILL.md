@@ -48,7 +48,7 @@ This block is the only copy of the baseline. When the preferred setup changes, e
 
 - `model`: the alias follows the current Opus release.
 - `effortLevel`: the fallback for models with no override, such as Fable.
-- `modelSettings`: medium is the everyday default. The key names one model ID, so it stops applying when Opus moves on and effort silently rises to `xhigh`. Update it when the Opus model ID changes.
+- `modelSettings`: medium is the everyday default. The key names one model ID, so it stops applying when Opus moves on and effort silently rises to `xhigh`. Step 1 checks the ID and step 5 checks the result, because nothing warns about this automatically.
 - `permissions.deny`: added after a usage report attributed 96% of usage to subagent-heavy sessions.
 
 ## Protect secrets
@@ -60,6 +60,8 @@ MCP configs often hold plaintext tokens. Do not `Read` or `cat` `~/.cursor/mcp.j
 - Deleting a file does not make a token safe. If a token may be exposed, tell the user plainly, have them revoke it, and name the remaining copies.
 
 ## 1. Apply the baseline
+
+First confirm the current Opus model ID. If you are running on Opus, use your own model ID. Otherwise have the user check `/model`. If it differs from the `modelSettings` key, use the current ID in the plan and tell the user to update the baseline in this file.
 
 Plan the change with a small script that prints only baseline keys, because `settings.json` can hold secrets. Show the planned changes and ask before writing.
 
@@ -129,11 +131,16 @@ Do not run the script on real config until it passes these on fake homes in the 
 
 1. An empty home exits 1. A home matching the baseline exactly, including `CLAUDE.md`, exits 0 with empty `settings.drift`.
 2. A fake token in a Cursor header and a fake email in `oauthAccount` do not appear anywhere in the output, and a `plaintext-secret` finding names `headers.Authorization`.
-3. An `env` value of `${API_KEY}` is not flagged.
-4. A corrupt `~/.cursor/mcp.json` exits 2 and is listed in `unreadable_configs`.
-5. `claude` with no args is flagged, and `claude mcp serve` is not.
-6. A project override reports key names and no values.
-7. A home matching the baseline except for a missing `CLAUDE.md` rule exits 1.
+3. A fake token in the `env` block of `~/.claude/settings.json` does not appear anywhere in the output.
+4. Fake tokens in an MCP arg, an MCP URL query and a server `env` in `~/.claude.json` do not appear anywhere in the output, and `plaintext-secret` findings name `args[<index>]`, `url` and `env.<name>`.
+5. An `env` value of `${API_KEY}` is not flagged.
+6. A corrupt `~/.cursor/mcp.json` exits 2 and is listed in `unreadable_configs`.
+7. `claude` with no args is flagged, and `claude mcp serve` is not.
+8. A stdio server pointing at a missing absolute path gets a `missing-path` finding with that path.
+9. A project override reports key names and no values.
+10. A home matching the baseline except for a missing `CLAUDE.md` rule exits 1.
+11. Extra deny rules beyond the baseline are not drift.
+12. The fake home's file list and contents are identical before and after a run, which proves the script is read-only.
 
 ## 4. Run and report
 
@@ -156,7 +163,7 @@ The audit reads config files. It does not see managed settings, project `.mcp.js
 ## 5. Verify
 
 1. Fix what the audit found, then run it again and confirm it exits 0, or that every remaining finding is one the user chose to keep.
-2. Start a new session, because running sessions keep their old settings. Confirm the `Agent` tool is unavailable and the model and effort are as expected.
+2. Start a new session, because running sessions keep their old settings. Confirm the `Agent` tool is unavailable and the model is as expected. Run `echo $CLAUDE_EFFORT` in a Bash call and confirm it shows the baseline effort for that model, not the `xhigh` fallback.
 3. For a removed MCP entry, reload the client (in Cursor, **Developer: Reload Window**).
 
 ## Honesty rules
