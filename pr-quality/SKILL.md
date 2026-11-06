@@ -266,7 +266,7 @@ If the title or body uses an acronym or initialism, end the body with a dedicate
 - List each acronym once, alphabetically, as `- **LOC** - lines of code`.
 - Include common ones such as `API` and `CI`; the section is for any reader, not only those who already know the term.
 - Do not expand an acronym where it appears. Write `LOC`, not `lines of code (LOC)`, and leave the meaning to the section.
-- Skip acronyms that appear only in the template's own headings, or in code, file paths, or ticket keys.
+- Skip `PR` itself, and skip acronyms that appear only in the template's own headings, or in code, file paths, or ticket keys.
 - Keep this section last, after `## Known limitations / follow-ups`.
 
 ## 8. Final readiness check
