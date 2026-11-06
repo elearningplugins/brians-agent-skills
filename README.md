@@ -135,7 +135,7 @@ These skills are experiments in doing exactly that.
 | [`pr-quality`](./pr-quality)           | Prepare and review pull requests using exact diff accounting, testing evidence, blast radius analysis, implementation review, and questions designed to challenge whether the proposed solution is actually the right one. |
 | [`qa-unit-testing`](./qa-unit-testing) | Build stronger TypeScript unit tests by combining example based tests, fast-check property testing, and Stryker mutation analysis to find gaps ordinary coverage metrics miss.                                             |
 | [`linkedin-vertical-captioned-clip`](./linkedin-vertical-captioned-clip) | Cut a live/stream recording into a LinkedIn 9:16 Remotion clip with TikTok-style one-word captions from Parakeet word timestamps (auto-editor), face-safe placement, filler stripping, and a short end fade. |
-| [`claude-code-setup`](./claude-code-setup) | Bring a computer to a known Claude Code baseline for model, effort, subagents and MCP servers, then measure where usage goes from local transcripts, with secrets masked and every change shown as a dry run first. |
+| [`claude-code-setup`](./claude-code-setup) | Bring a computer to a known Claude Code baseline for model, effort, subagents and MCP servers, then measure where usage goes from local transcripts, with secrets masked and every change shown first. |
 
 More skills will be added as Brian continues converting useful engineering practices into repeatable agent workflows.
 
@@ -198,13 +198,15 @@ Do not evenly space transcript words — that is what made captions look unsynce
 
 Carry a Claude Code setup to another computer, then measure what is using its limits:
 
-* Compare settings with an editable baseline and apply the differences only after a dry run, with backups
+* Compare settings with an editable baseline and apply the differences only after showing them, with backups
 * Check Claude Code and Cursor MCP entries for bare `claude` commands, missing paths and plaintext tokens, reporting where a secret sits and never its value
 * Measure usage from local transcripts, deduped by message, to show which sessions and how much context drive it
 * Show whether subagents ran, from their calls and transcripts
-* Exit non-zero on any finding, and fail outright if a config cannot be read, so a corrupt file never reads as a clean one
+* Treat a config it cannot read as a failed audit, so a corrupt file never reads as a clean one
 
 The skill came from an audit where the subagent deny rule was working, while a Cursor entry had been starting `claude` about 250 times a day and three sessions had reached about 960K tokens of context.
+
+It is one file: the agent rebuilds the audit from the spec in `SKILL.md`, then proves it on fake homes before it reads real config.
 
 ---
 
