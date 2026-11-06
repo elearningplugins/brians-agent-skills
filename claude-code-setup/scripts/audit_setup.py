@@ -267,6 +267,18 @@ def cli_version() -> str | None:
         return None
 
 
+def missing_rules(existing: str, rules: list[str]) -> list[str]:
+    """Return baseline rules that the existing CLAUDE.md text does not already contain."""
+    return [rule for rule in rules if rule not in existing]
+
+
+def claude_md_report(home: Path, rules: list[str]) -> dict:
+    """Compare the global CLAUDE.md with the baseline rules."""
+    path = home / ".claude" / "CLAUDE.md"
+    existing = path.read_text(encoding="utf-8", errors="ignore") if path.exists() else ""
+    return {"missing_rules": missing_rules(existing, rules)}
+
+
 def unreadable_configs(home: Path) -> list[str]:
     """Name config files that exist but cannot be parsed, so a corrupt file never reads as an empty one."""
     paths = [home / ".claude" / "settings.json", home / ".claude.json", home / ".cursor" / "mcp.json"]
@@ -305,7 +317,7 @@ def exit_code(report: dict) -> int:
     if report["unreadable_configs"] or report["usage"]["unreadable_transcripts"]:
         return 2
     settings = report["settings"]
-    return 1 if settings["drift"] or settings["overrides"] or settings["effort_findings"] or report["mcp"]["findings"] else 0
+    return 1 if settings["drift"] or settings["overrides"] or settings["effort_findings"] or report["claude_md"]["missing_rules"] or report["mcp"]["findings"] else 0
 
 
 def audit(home: Path, baseline: dict, days: int, project: Path) -> dict:
@@ -327,10 +339,11 @@ def audit(home: Path, baseline: dict, days: int, project: Path) -> dict:
             "modelSettings": (settings or {}).get("modelSettings"),
             "deny": lookup(settings or {}, "permissions.deny"),
             "hook_events": sorted((settings or {}).get("hooks") or {}),
-            "drift": config_drift(settings or {}, baseline),
+            "drift": config_drift(settings or {}, baseline["settings"]),
             "overrides": settings_overrides(home, project),
             "effort_findings": effort_findings(settings or {}, usage["requests_by_model"]),
         },
+        "claude_md": claude_md_report(home, baseline["claude_md_rules"]),
         "custom_agents": sorted(path.stem for path in agents.glob("*.md")) if agents.is_dir() else [],
         "env": env_report(),
         "mcp": mcp_report(home),
@@ -341,7 +354,7 @@ def audit(home: Path, baseline: dict, days: int, project: Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--home", type=Path, default=Path.home(), help="home directory to audit")
-    parser.add_argument("--baseline", type=Path, default=SKILL_DIR / "assets" / "baseline-settings.json")
+    parser.add_argument("--baseline", type=Path, default=SKILL_DIR / "assets" / "baseline.json")
     parser.add_argument("--days", type=int, default=30, help="usage window in days")
     parser.add_argument("--project", type=Path, default=Path.cwd(), help="project whose settings can override the user file")
     args = parser.parse_args()

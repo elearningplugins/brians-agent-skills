@@ -37,7 +37,7 @@ test -f "$SKILL_DIR/scripts/audit_setup.py" || { echo "Set SKILL_DIR to this ski
 | `tui` | `fullscreen` | Terminal layout preference. |
 | `~/.claude/CLAUDE.md` | Single-line comments rule | Applies across every repository. |
 
-The values live in `assets/baseline-settings.json` and `assets/global-CLAUDE.md`. When the preferred setup changes, change those files and this table together.
+The values live in `assets/baseline.json`. When the preferred setup changes, change that file and this table together.
 
 ## Protect secrets
 
@@ -58,7 +58,7 @@ It is read-only, prints JSON and exits with:
 | Exit | Meaning |
 |---|---|
 | 0 | No findings in anything it checks |
-| 1 | Drift, an override or an MCP finding needs attention |
+| 1 | Drift, an override, a missing `CLAUDE.md` rule or an MCP finding needs attention |
 | 2 | A config or transcript could not be read, so the report is incomplete |
 
 Treat 2 as a failed audit, not a clean one. Run it from the project in question or pass `--project`, because project settings can override the user file. `--days 7` narrows the usage window.
@@ -67,7 +67,7 @@ Treat 2 as a failed audit, not a clean one. Run it from the project in question 
 
 Lead with the verdict, then cover each area below. Mark each claim as **measured** or **inferred**.
 
-- **Config:** `settings.drift`, `settings.overrides` and `settings.effort_findings`. Also check `env.values`, because `ANTHROPIC_MODEL` or `CLAUDE_EFFORT` can change what runs without appearing as drift.
+- **Config:** `settings.drift`, `settings.overrides`, `settings.effort_findings` and `claude_md.missing_rules`. Also check `env.values`, because `ANTHROPIC_MODEL` or `CLAUDE_EFFORT` can change what runs without appearing as drift.
 - **Subagents:** `usage.subagent_calls` and `usage.subagent_transcripts`. Both empty shows none ran in the window. It does not show the rule is why.
 - **MCP:** each item in `mcp.findings`.
 - **Usage:** `usage.tokens` by type, `requests_by_model`, `average_context_per_request`, and the top sessions with their `cumulative_share_pct`.

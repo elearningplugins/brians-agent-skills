@@ -164,12 +164,10 @@ def test_merge_is_idempotent():
 
 def make_assets(tmp_path):
     baseline = tmp_path / "baseline.json"
-    baseline.write_text(json.dumps(BASELINE), encoding="utf-8")
-    rules = tmp_path / "rules.md"
-    rules.write_text("# Personal preferences\n\n- Keep comments short.\n", encoding="utf-8")
+    baseline.write_text(json.dumps({"settings": BASELINE, "claude_md_rules": ["Keep comments short."]}), encoding="utf-8")
     home = tmp_path / "home"
     (home / ".claude").mkdir(parents=True)
-    return home, ["--home", str(home), "--baseline", str(baseline), "--claude-md", str(rules)]
+    return home, ["--home", str(home), "--baseline", str(baseline)]
 
 
 def test_apply_dry_run_changes_nothing(tmp_path):
@@ -256,15 +254,37 @@ def test_new_computer_goes_from_failing_audit_to_clean_after_apply(tmp_path):
 def test_each_attention_item_alone_makes_the_audit_exit_1():
     def report(**settings):
         base = {"drift": [], "overrides": [], "effort_findings": []}
-        return {"unreadable_configs": [], "usage": {"unreadable_transcripts": 0}, "mcp": {"findings": []}, "settings": {**base, **settings}}
+        return {"unreadable_configs": [], "usage": {"unreadable_transcripts": 0}, "mcp": {"findings": []}, "claude_md": {"missing_rules": []}, "settings": {**base, **settings}}
 
     assert audit_setup.exit_code(report()) == 0
     assert audit_setup.exit_code(report(drift=[{}])) == 1
     assert audit_setup.exit_code(report(overrides=[{}])) == 1
     assert audit_setup.exit_code(report(effort_findings=[{}])) == 1
+    without_rule = report()
+    without_rule["claude_md"]["missing_rules"] = ["rule"]
+    assert audit_setup.exit_code(without_rule) == 1
     with_mcp = report()
     with_mcp["mcp"]["findings"] = [{}]
     assert audit_setup.exit_code(with_mcp) == 1
     unreadable = report(drift=[{}])
     unreadable["usage"]["unreadable_transcripts"] = 1
     assert audit_setup.exit_code(unreadable) == 2
+
+
+@pytest.mark.parametrize("existing,expected", [
+    ("", ["Rule one.", "Rule two."]),
+    ("- Rule one.\n", ["Rule two."]),
+    ("# Mine\n- Rule one.\n- Rule two.\n", []),
+])
+def test_missing_rules(existing, expected):
+    assert audit_setup.missing_rules(existing, ["Rule one.", "Rule two."]) == expected
+
+
+def test_audit_fails_when_only_the_claude_md_rule_is_missing(tmp_path):
+    assert run_script("apply_baseline.py", "--home", str(tmp_path), "--write").returncode == 0
+    (tmp_path / ".claude" / "CLAUDE.md").write_text("# Other notes\n", encoding="utf-8")
+    result = run_script("audit_setup.py", "--home", str(tmp_path), "--project", str(tmp_path))
+    assert result.returncode == 1
+    report = json.loads(result.stdout)
+    assert report["settings"]["drift"] == []
+    assert len(report["claude_md"]["missing_rules"]) == 1

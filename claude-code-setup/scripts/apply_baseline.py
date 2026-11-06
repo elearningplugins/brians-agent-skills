@@ -11,6 +11,8 @@ import tempfile
 import time
 from pathlib import Path
 
+from audit_setup import missing_rules
+
 SKILL_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -37,12 +39,6 @@ def merge(current: dict, baseline: dict, prefix: str = "") -> tuple[dict, list[s
     return merged, changes
 
 
-def missing_rules(existing: str, baseline_text: str) -> list[str]:
-    """Return baseline bullet rules that the existing CLAUDE.md does not already contain."""
-    rules = [line for line in baseline_text.splitlines() if line.startswith("- ")]
-    return [rule for rule in rules if rule not in existing]
-
-
 def backup(path: Path) -> Path:
     """Copy a file beside itself with a timestamp, keeping its mode."""
     target = path.with_name(f"{path.name}.bak-{int(time.time())}")
@@ -64,8 +60,7 @@ def write_atomic(path: Path, text: str) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--home", type=Path, default=Path.home(), help="home directory to update")
-    parser.add_argument("--baseline", type=Path, default=SKILL_DIR / "assets" / "baseline-settings.json")
-    parser.add_argument("--claude-md", type=Path, default=SKILL_DIR / "assets" / "global-CLAUDE.md")
+    parser.add_argument("--baseline", type=Path, default=SKILL_DIR / "assets" / "baseline.json")
     parser.add_argument("--write", action="store_true", help="apply the changes; omitted means dry run")
     args = parser.parse_args()
 
@@ -83,14 +78,14 @@ def main() -> int:
             return 2
 
     baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
-    merged, changes = merge(current, baseline)
+    merged, changes = merge(current, baseline["settings"])
     existing_md = claude_md_path.read_text(encoding="utf-8") if claude_md_path.exists() else ""
-    rules = missing_rules(existing_md, args.claude_md.read_text(encoding="utf-8"))
+    rules = missing_rules(existing_md, baseline["claude_md_rules"])
 
     for change in changes:
         print(f"settings.json {change}")
     for rule in rules:
-        print(f"CLAUDE.md add: {rule}")
+        print(f"CLAUDE.md add: - {rule}")
     if not changes and not rules:
         print("already matches the baseline")
         return 0
@@ -107,7 +102,7 @@ def main() -> int:
             print(f"backup: {backup(claude_md_path)}")
         separator = "" if not existing_md or existing_md.endswith("\n") else "\n"
         heading = "" if existing_md else "# Personal preferences\n\n"
-        write_atomic(claude_md_path, existing_md + separator + heading + "\n".join(rules) + "\n")
+        write_atomic(claude_md_path, existing_md + separator + heading + "".join(f"- {rule}\n" for rule in rules))
     print("applied; new Claude Code sessions pick this up")
     return 0
 
